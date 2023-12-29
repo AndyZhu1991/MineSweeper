@@ -44,10 +44,6 @@ kotlin {
     sourceSets {
         val desktopMain by getting
         
-        androidMain.dependencies {
-            implementation(libs.compose.ui.tooling.preview)
-            implementation(libs.androidx.activity.compose)
-        }
         commonMain.dependencies {
             implementation(compose.runtime)
             implementation(compose.foundation)
@@ -55,6 +51,14 @@ kotlin {
             implementation(compose.ui)
             @OptIn(ExperimentalComposeLibrary::class)
             implementation(compose.components.resources)
+            implementation(libs.kotlinx.coroutines.core)
+            implementation(libs.decompose)
+            implementation(libs.decompose.extension)
+        }
+        androidMain.dependencies {
+            implementation(libs.compose.ui.tooling.preview)
+            implementation(libs.androidx.activity.compose)
+            implementation(libs.kotlinx.coroutines.android)
         }
         desktopMain.dependencies {
             implementation(compose.desktop.currentOs)
