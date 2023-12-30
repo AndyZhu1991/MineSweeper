@@ -38,7 +38,7 @@ private fun DrawScope.drawMine(item: GameInstance.MineItemUI,
             }
             when(item) {
                 GameInstance.MineItemUI.Hidden -> {
-                    drawRoundRect(Color.Cyan, paddingOffset, innerSize, CornerRadius(drawConfig.corner.toPx()))
+                    drawRoundRect(drawConfig.hiddenItemColor, paddingOffset, innerSize, CornerRadius(drawConfig.corner.toPx()))
                 }
                 GameInstance.MineItemUI.Flagged -> {
                     drawTextAtCenter(textMeasurer, "🚩", outerSize, drawConfig.itemTextStyle)

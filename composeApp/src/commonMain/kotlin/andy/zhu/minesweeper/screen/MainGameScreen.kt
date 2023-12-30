@@ -1,5 +1,9 @@
 package andy.zhu.minesweeper.screen
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.AnimationVector4D
+import androidx.compose.animation.core.TwoWayConverter
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.gestures.detectDragGestures
@@ -8,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.input.pointer.PointerEventType
@@ -29,15 +34,26 @@ import onPointerEvent
 fun MainGameScreen(component: MainGameScreenComponent) {
     val mapUI by component.gameInstance.mapUIFlow.collectAsState()
     val textMeasure = rememberTextMeasurer()
-    val matrix = remember { Matrix() }
-    var invalidations by remember { mutableStateOf(0) }
+    var matrix by remember { mutableStateOf(Matrix()) }
+    var animateTargetMatrix by remember { mutableStateOf(Matrix()) }
+    val animatableMatrix = remember {
+        Animatable(Matrix(), MatrixConverter)
+    }
+
+    LaunchedEffect(matrix, animateTargetMatrix) {
+        if (matrix == animateTargetMatrix) {
+            animatableMatrix.animateTo(animateTargetMatrix, animationSpec = tween(200))
+        } else {
+            animatableMatrix.snapTo(matrix)
+        }
+    }
 
     val mineSizePx = with(LocalDensity.current) {
         MineDrawConfig.mineSize.toSize()
     }
 
     fun calcMinePosition(pointerOffset: Offset): IntOffset {
-        val (x, y) = matrix.inverted().map(pointerOffset)
+        val (x, y) = animatableMatrix.value.inverted().map(pointerOffset)
         val xPos = (x / mineSizePx.width).toInt()
         val yPos = (y / mineSizePx.height).toInt()
         return IntOffset(xPos, yPos)
@@ -59,9 +75,10 @@ fun MainGameScreen(component: MainGameScreenComponent) {
                 )
             }
             .pointerInput(Unit) {
-                detectDragGestures { change, dragAmount ->
-                    matrix.translate(dragAmount.x / matrix.scaleX(), dragAmount.y / matrix.scaleY())
-                    invalidations++
+                detectDragGestures { _, dragAmount ->
+                    matrix = matrix.transformed {
+                        translate(dragAmount.x / scaleX(), dragAmount.y / scaleY())
+                    }
                 }
             }
             .mousePointerMatcher(MousePointerButton.Secondary) {
@@ -77,16 +94,16 @@ fun MainGameScreen(component: MainGameScreenComponent) {
                 val position = pointerInputChange.position
                 val scrollOffset = pointerInputChange.scrollDelta.y
                 val scale = if (scrollOffset > 0) 0.8f else 1.25f
-                matrix.scale(scale, scale, position.x, position.y)
-                invalidations++
+                matrix = matrix.transformed {
+                    scale(scale, scale, position.x, position.y)
+                }
+                animateTargetMatrix = matrix
             }
     ) {
-        invalidations.let {
-            withTransform(
-                transformBlock = { transform(matrix) }
-            ) {
-                drawMines(mapUI, textMeasure, MineDrawConfig)
-            }
+        withTransform(
+            transformBlock = { transform(animatableMatrix.value) }
+        ) {
+            drawMines(mapUI, textMeasure, MineDrawConfig)
         }
     }
 }
@@ -97,10 +114,19 @@ object MineDrawConfig {
     val corner = 4.dp
     val mineInnerSize = DpSize(mineSize.width - padding, mineSize.height - padding)
     val itemTextStyle = TextStyle(fontSize = 32.sp)
+    val hiddenItemColor = Color.Gray.copy(alpha = 0.66f)
+}
+
+private fun Matrix.transformed(block: Matrix.() -> Unit): Matrix {
+    return Matrix(values.copyOf()).apply(block)
+}
+
+private fun Matrix.copy(): Matrix {
+    return Matrix(values.copyOf())
 }
 
 private fun Matrix.inverted(): Matrix {
-    return Matrix(values.copyOf()).apply { invert() }
+    return transformed { invert() }
 }
 
 private fun Matrix.scaleX(): Float {
@@ -125,4 +151,26 @@ private fun Matrix.scale(scaleX: Float, scaleY: Float, pivotX: Float, pivotY: Fl
     translate(deltaX, deltaY)
     scale(scaleX, scaleY)
     translate(-deltaX, -deltaY)
+}
+
+private fun Matrix.postTranslate(translateX: Float, translateY: Float) {
+    translate(translateX / scaleX(), translateY / scaleY())
+}
+
+object MatrixConverter : TwoWayConverter<Matrix, AnimationVector4D> {
+    override val convertFromVector: (AnimationVector4D) -> Matrix = { vector ->
+        Matrix().apply {
+            values[Matrix.TranslateX] = vector.v1
+            values[Matrix.TranslateY] = vector.v2
+            values[Matrix.ScaleX] = vector.v3
+            values[Matrix.ScaleY] = vector.v4
+        }
+    }
+    override val convertToVector: (Matrix) -> AnimationVector4D = { matrix ->
+        AnimationVector4D(
+            matrix.values[Matrix.TranslateX], matrix.values[Matrix.TranslateY],
+            matrix.values[Matrix.ScaleX], matrix.values[Matrix.ScaleY]
+        )
+    }
+
 }
