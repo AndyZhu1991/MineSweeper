@@ -1,6 +1,6 @@
 package andy.zhu.minesweeper.navigation
 
-import andy.zhu.minesweeper.GameLevel
+import andy.zhu.minesweeper.GameConfig
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.decompose.router.stack.StackNavigation
 import com.arkivanov.decompose.router.stack.childStack
@@ -50,6 +50,6 @@ class RootComponent(
         data object LevelSelectScreen : Config()
         
         @Serializable
-        data class MainGameScreen(val level: GameLevel) : Config()
+        data class MainGameScreen(val level: GameConfig) : Config()
     }
 }
