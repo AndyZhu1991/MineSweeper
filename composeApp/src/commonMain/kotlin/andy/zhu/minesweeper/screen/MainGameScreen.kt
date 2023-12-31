@@ -8,6 +8,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -75,9 +76,10 @@ fun MainGameScreen(component: MainGameScreenComponent) {
                 )
             }
             .pointerInput(Unit) {
-                detectDragGestures { _, dragAmount ->
+                detectTransformGestures { centroid, pan, zoom, _ ->
                     matrix = matrix.transformed {
-                        translate(dragAmount.x / scaleX(), dragAmount.y / scaleY())
+                        translate(pan.x / scaleX(), pan.y / scaleY())
+                        scale(zoom, zoom, centroid.x, centroid.y)
                     }
                 }
             }
