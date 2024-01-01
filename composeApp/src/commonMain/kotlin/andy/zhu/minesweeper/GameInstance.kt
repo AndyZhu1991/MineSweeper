@@ -1,16 +1,26 @@
 package andy.zhu.minesweeper
 
+import io.github.aakira.napier.Napier
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.map
 
 class GameInstance(
     val gameConfig: GameConfig,
 ) {
+    private val coroutineScope = CoroutineScope(Dispatchers.Default)
+
     private val hasMine = createInitialMines(gameConfig)
     private val mineCount = calcMineCounts()
     private val status = Array<GridStatus>(gameConfig.mapSize()) { GridStatus.HIDDEN }
     private val _mapUIFlow: MutableStateFlow<MineMapUI> = MutableStateFlow(buildMapUI())
     val mapUIFlow: StateFlow<MineMapUI> = _mapUIFlow
+
+    private var timerJob: Job? = null
+    private val timeSeconds = MutableStateFlow<Int>(0)
+    val timeString: Flow<String> = timeSeconds.map(::toTimeString)
     
     private fun to1dIndex(y: Int, x: Int) = y * gameConfig.width + x
     
@@ -109,6 +119,7 @@ class GameInstance(
         }
         if (status(y, x) == GridStatus.HIDDEN) {
             openGrid(y, x)
+            startTimer()
             updateMapUI()
         }
     }
@@ -164,6 +175,26 @@ class GameInstance(
             }
         }
     }
+
+    private fun startTimer() {
+        if (timerJob == null) {
+            timerJob = coroutineScope.launch {
+                while (true) {
+                    delay(1000)
+                    timeSeconds.value += 1
+                }
+            }
+        }
+    }
+
+    fun pauseTimer() {
+        timerJob?.cancel()
+        timerJob = null
+    }
+
+    fun destroy() {
+        coroutineScope.cancel()
+    }
     
     enum class GridStatus {
         HIDDEN, OPENED, FLAGGED, UNCERTAIN
@@ -189,6 +220,18 @@ class GameInstance(
             val y = index / gameConfig.width
             val x = index % gameConfig.width
             Triple(y, x, item)
+        }
+    }
+
+    companion object {
+        private fun toTimeString(timeSeconds: Int): String {
+            val minute = timeSeconds / 60
+            val second = timeSeconds % 60
+            return if (second < 10) {
+                "$minute:0$second"
+            } else {
+                "$minute:$second"
+            }
         }
     }
 }

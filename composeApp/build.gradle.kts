@@ -56,6 +56,9 @@ kotlin {
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.decompose)
             implementation(libs.decompose.extension)
+            implementation(libs.essenty)
+            implementation(libs.essenty.coroutines)
+            implementation(libs.napier)
         }
         androidMain.dependencies {
             implementation(libs.compose.ui.tooling.preview)

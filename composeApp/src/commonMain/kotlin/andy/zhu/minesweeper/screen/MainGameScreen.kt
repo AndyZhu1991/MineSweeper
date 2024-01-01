@@ -44,7 +44,8 @@ import onPointerEvent
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainGameScreen(component: MainGameScreenComponent) {
-    val mapUI by component.gameInstance.mapUIFlow.collectAsState()
+    val gameInstance by component.gameInstance.collectAsState()
+    val mapUI by gameInstance.mapUIFlow.collectAsState()
     val textMeasure = rememberTextMeasurer()
     var matrix by remember { mutableStateOf(Matrix()) }
     var animateTargetMatrix by remember { mutableStateOf(Matrix()) }
@@ -78,11 +79,11 @@ fun MainGameScreen(component: MainGameScreenComponent) {
                 detectTapGestures(
                     onLongPress = {
                         val (x, y) = calcMinePosition(it)
-                        component.gameInstance.onMineRightClick(y, x)
+                        gameInstance.onMineRightClick(y, x)
                     },
                     onTap = {
                         val (x, y) = calcMinePosition(it)
-                        component.gameInstance.onMineTap(y, x)
+                        gameInstance.onMineTap(y, x)
                     }
                 )
             }
@@ -96,11 +97,11 @@ fun MainGameScreen(component: MainGameScreenComponent) {
             }
             .mousePointerMatcher(MousePointerButton.Secondary) {
                 val (x, y) = calcMinePosition(it)
-                component.gameInstance.onMineRightClick(y, x)
+                gameInstance.onMineRightClick(y, x)
             }
             .mousePointerMatcher(MousePointerButton.Tertiary) {
                 val (x, y) = calcMinePosition(it)
-                component.gameInstance.onMineMiddleClick(y, x)
+                gameInstance.onMineMiddleClick(y, x)
             }
             .onPointerEvent(PointerEventType.Scroll) {
                 val pointerInputChange = it.changes.firstOrNull() ?: return@onPointerEvent
@@ -127,13 +128,15 @@ fun MainGameScreen(component: MainGameScreenComponent) {
         }
     }
 
+    val timeString by gameInstance.timeString.collectAsState("0")
+
     CenterAlignedTopAppBar(
         colors = TopAppBarDefaults.topAppBarColors(
             containerColor = MaterialTheme.colors.primarySurface.copy(alpha = 0.9f),
         ),
         title = {
             Text(
-                "Centered Top App Bar",
+                timeString,
                 color = MaterialTheme.colors.onPrimary,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
@@ -149,7 +152,7 @@ fun MainGameScreen(component: MainGameScreenComponent) {
             }
         },
         actions = {
-            IconButton(onClick = { /* do something */ }) {
+            IconButton(onClick = component::onRefresh) {
                 Icon(
                     imageVector = Icons.Filled.Refresh,
                     tint = MaterialTheme.colors.onPrimary,
