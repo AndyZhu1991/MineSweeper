@@ -7,6 +7,7 @@ import com.arkivanov.decompose.ComponentContext
 class MainGameScreenComponent(
     componentContext: ComponentContext,
     val level: GameConfig,
+    val onClose: () -> Unit,
 ) : ComponentContext by componentContext {
     val gameInstance = GameInstance(level)
 }

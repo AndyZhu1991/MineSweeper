@@ -1,15 +1,21 @@
 package andy.zhu.minesweeper.screen
 
+import MousePointerButton
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.AnimationVector4D
 import androidx.compose.animation.core.TwoWayConverter
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -25,13 +31,17 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.rememberTextMeasurer
-import androidx.compose.ui.unit.*
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import andy.zhu.minesweeper.drawMines
 import andy.zhu.minesweeper.navigation.MainGameScreenComponent
 import mousePointerMatcher
 import onPointerEvent
 
-@OptIn(ExperimentalFoundationApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainGameScreen(component: MainGameScreenComponent) {
     val mapUI by component.gameInstance.mapUIFlow.collectAsState()
@@ -116,6 +126,38 @@ fun MainGameScreen(component: MainGameScreenComponent) {
             drawMines(mapUI, textMeasure, MineDrawConfig)
         }
     }
+
+    CenterAlignedTopAppBar(
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = MaterialTheme.colors.primarySurface.copy(alpha = 0.9f),
+        ),
+        title = {
+            Text(
+                "Centered Top App Bar",
+                color = MaterialTheme.colors.onPrimary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        },
+        navigationIcon = {
+            IconButton(onClick = component.onClose) {
+                Icon(
+                    imageVector = Icons.Filled.ArrowBack,
+                    tint = MaterialTheme.colors.onPrimary,
+                    contentDescription = "Localized description"
+                )
+            }
+        },
+        actions = {
+            IconButton(onClick = { /* do something */ }) {
+                Icon(
+                    imageVector = Icons.Filled.Refresh,
+                    tint = MaterialTheme.colors.onPrimary,
+                    contentDescription = "Localized description"
+                )
+            }
+        },
+    )
 }
 
 private fun calcInitMatrix(mineSize: Size, width: Int, height: Int, screenSize: Size): Matrix {
@@ -210,11 +252,11 @@ object MatrixConverter : TwoWayConverter<Matrix, AnimationVector4D> {
             values[Matrix.ScaleY] = vector.v4
         }
     }
+
     override val convertToVector: (Matrix) -> AnimationVector4D = { matrix ->
         AnimationVector4D(
             matrix.values[Matrix.TranslateX], matrix.values[Matrix.TranslateY],
             matrix.values[Matrix.ScaleX], matrix.values[Matrix.ScaleY]
         )
     }
-
 }

@@ -4,6 +4,7 @@ import andy.zhu.minesweeper.GameConfig
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.decompose.router.stack.StackNavigation
 import com.arkivanov.decompose.router.stack.childStack
+import com.arkivanov.decompose.router.stack.pop
 import com.arkivanov.decompose.router.stack.push
 import kotlinx.serialization.Serializable
 
@@ -34,7 +35,11 @@ class RootComponent(
                 ))
             }
             is Config.MainGameScreen -> {
-                Child.MainGameScreen(MainGameScreenComponent(context, config.level))
+                Child.MainGameScreen(MainGameScreenComponent(
+                    context,
+                    config.level,
+                    navigation::pop,
+                ))
             }
         }
     }
