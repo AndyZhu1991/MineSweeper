@@ -12,15 +12,6 @@ class GameInstance(
     private val _mapUIFlow: MutableStateFlow<MineMapUI> = MutableStateFlow(buildMapUI())
     val mapUIFlow: StateFlow<MineMapUI> = _mapUIFlow
     
-//    init {
-//        positions().forEach { (y, x) ->
-//            if ((x+y) % 2 == 0) {
-//                status[y * gameConfig.width + x] = GridStatus.OPENED
-//            }
-//        }
-//        updateMapUI()
-//    }
-    
     private fun to1dIndex(y: Int, x: Int) = y * gameConfig.width + x
     
     private fun to2dIndex(index: Int): Pair<Int, Int> {
@@ -196,7 +187,7 @@ class GameInstance(
 
         val enumeratedItems: List<Triple<Int, Int, MineItemUI>> = items.mapIndexed { index, item->
             val y = index / gameConfig.width
-            val x = index % gameConfig.height
+            val x = index % gameConfig.width
             Triple(y, x, item)
         }
     }

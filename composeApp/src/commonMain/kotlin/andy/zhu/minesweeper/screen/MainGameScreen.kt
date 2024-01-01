@@ -13,18 +13,19 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.graphics.drawscope.withTransform
+import androidx.compose.ui.graphics.isIdentity
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.rememberTextMeasurer
-import androidx.compose.ui.unit.DpSize
-import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.compose.ui.unit.*
 import andy.zhu.minesweeper.drawMines
 import andy.zhu.minesweeper.navigation.MainGameScreenComponent
 import mousePointerMatcher
@@ -101,12 +102,53 @@ fun MainGameScreen(component: MainGameScreenComponent) {
                 }
                 animateTargetMatrix = matrix
             }
+            .onGloballyPositioned { coordinates ->
+                if (matrix.isIdentity()) {
+                    matrix = calcInitMatrix(mineSizePx, component.level.width, component.level.height,
+                                            Size(coordinates.size.width.toFloat(), coordinates.size.height.toFloat())
+                    )
+                }
+            }
     ) {
         withTransform(
             transformBlock = { transform(animatableMatrix.value) }
         ) {
             drawMines(mapUI, textMeasure, MineDrawConfig)
         }
+    }
+}
+
+private fun calcInitMatrix(mineSize: Size, width: Int, height: Int, screenSize: Size): Matrix {
+    val minesSize = Size(mineSize.width * width, mineSize.height * height)
+    val screenRect = Rect(Offset.Zero, screenSize)
+
+    val targetRect = if (minesSize.width < screenSize.width && minesSize.height < screenSize.height) {
+        Rect(Offset((screenRect.width - minesSize.width) / 2, (screenRect.height - minesSize.height) / 2), minesSize)
+    } else {
+        val minesRatio = minesSize.width / minesSize.height
+        val screenRatio = screenRect.width / screenRect.height
+        if (minesRatio < screenRatio) {
+            val targetHeight = screenRect.height
+            val targetWidth = minesRatio * targetHeight
+            val offsetX = (screenRect.width - targetWidth) / 2
+            val offsetY = 0f
+            Rect(Offset(offsetX, offsetY), Size(targetWidth, targetHeight))
+        } else {
+            val targetWidth = screenRect.width
+            val targetHeight = targetWidth / minesRatio
+            val offsetX = 0f
+            val offsetY = (screenRect.height - targetHeight) / 2
+            Rect(Offset(offsetX, offsetY), Size(targetWidth, targetHeight))
+        }
+    }
+
+    val translateX = targetRect.left
+    val translateY = targetRect.top
+    val scaleX = targetRect.width / minesSize.width
+    val scaleY = targetRect.height / minesSize.height
+    return Matrix().apply {
+        translate(translateX, translateY)
+        scale(scaleX, scaleY)
     }
 }
 
