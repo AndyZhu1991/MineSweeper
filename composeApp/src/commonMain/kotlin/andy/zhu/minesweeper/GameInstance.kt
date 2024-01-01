@@ -1,11 +1,7 @@
 package andy.zhu.minesweeper
 
-import io.github.aakira.napier.Napier
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.*
 
 class GameInstance(
     val gameConfig: GameConfig,
@@ -21,6 +17,31 @@ class GameInstance(
     private var timerJob: Job? = null
     private val timeSeconds = MutableStateFlow<Int>(0)
     val timeString: Flow<String> = timeSeconds.map(::toTimeString)
+
+    private val openedCount = MutableStateFlow(0)
+    private val flaggedCount = MutableStateFlow(0)
+
+    private val minesRemaining = flaggedCount.map {
+        val remaining = gameConfig.mineCount - it
+        return@map if (remaining >= 0) remaining else 0
+    }
+
+    val minesRemainingText = minesRemaining.map { "💣$it" }
+
+    val succeed = openedCount.map { it == gameConfig.mapSize() - gameConfig.mineCount }
+    val failed = MutableStateFlow(false)
+
+    private val gameEnd = succeed.combine(failed) { succeed, failed ->
+        succeed || failed
+    }
+
+    init {
+        coroutineScope.launch {
+            gameEnd.collect {
+                if (it) pauseTimer()
+            }
+        }
+    }
     
     private fun to1dIndex(y: Int, x: Int) = y * gameConfig.width + x
     
@@ -137,14 +158,20 @@ class GameInstance(
     }
     
     private fun switchStatus(y: Int, x: Int) {
-        val newStatus = when(status(y, x)) {
+        val oldStatus = status(y, x)
+        val newStatus = when(oldStatus) {
             GridStatus.HIDDEN -> GridStatus.FLAGGED
             GridStatus.OPENED -> GridStatus.OPENED
-            GridStatus.FLAGGED -> GridStatus.UNCERTAIN
+            GridStatus.FLAGGED -> GridStatus.HIDDEN
             GridStatus.UNCERTAIN -> GridStatus.HIDDEN
         }
         setStatus(y, x, newStatus)
         updateMapUI()
+        if (oldStatus == GridStatus.FLAGGED) {
+            flaggedCount.value--
+        } else if (newStatus == GridStatus.FLAGGED) {
+            flaggedCount.value++
+        }
     }
     
     private fun tryOpenNeighbours(y: Int, x: Int) {
@@ -162,10 +189,14 @@ class GameInstance(
     }
     
     private fun openGrid(y: Int, x: Int) {
+        if (status(y, x) != GridStatus.HIDDEN) {
+            return
+        }
         setStatus(y, x, GridStatus.OPENED)
         if (hasMine(y, x)) {
-            // Game Over
+            failed.value = true
         } else {
+            openedCount.value++
             if (mineCount(y, x) == 0) {
                 neighbours(y, x)
                     .filter { status(it.first, it.second) == GridStatus.HIDDEN }

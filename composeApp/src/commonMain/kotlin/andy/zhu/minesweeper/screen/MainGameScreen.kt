@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalMaterial3Api::class)
+
 package andy.zhu.minesweeper.screen
 
 import MousePointerButton
@@ -8,6 +10,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectTransformGestures
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
@@ -31,7 +34,6 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.rememberTextMeasurer
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -129,18 +131,17 @@ fun MainGameScreen(component: MainGameScreenComponent) {
     }
 
     val timeString by gameInstance.timeString.collectAsState("0")
+    val minesRemaining by gameInstance.minesRemainingText.collectAsState("")
 
     CenterAlignedTopAppBar(
         colors = TopAppBarDefaults.topAppBarColors(
             containerColor = MaterialTheme.colors.primarySurface.copy(alpha = 0.9f),
         ),
         title = {
-            Text(
-                timeString,
-                color = MaterialTheme.colors.onPrimary,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
+            Row {
+                Text(timeString)
+                Text(minesRemaining)
+            }
         },
         navigationIcon = {
             IconButton(onClick = component.onClose) {
@@ -160,6 +161,58 @@ fun MainGameScreen(component: MainGameScreenComponent) {
                 )
             }
         },
+    )
+
+    val succeed by gameInstance.succeed.collectAsState(false)
+    val showSuccessDialog = remember { mutableStateOf(false) }
+    LaunchedEffect(succeed) {
+        showSuccessDialog.value = succeed
+    }
+    if (showSuccessDialog.value) {
+        SuccessDialog { showSuccessDialog.value = false }
+    }
+
+    val failed by gameInstance.failed.collectAsState(false)
+    val showFailedDialog = remember { mutableStateOf(false) }
+    LaunchedEffect(failed) {
+        showFailedDialog.value = failed
+    }
+    if (showFailedDialog.value) {
+        FailureDialog { showFailedDialog.value = false }
+    }
+}
+
+@Composable
+private fun SuccessDialog(onDismissRequest: () -> Unit) {
+    androidx.compose.material3.AlertDialog(
+        confirmButton = {
+            TextButton(
+                onClick = onDismissRequest
+            ) {
+                Text("Ok")
+            }
+        },
+        onDismissRequest = onDismissRequest,
+        text = {
+            Text("Congratuation!")
+        }
+    )
+}
+
+@Composable
+private fun FailureDialog(onDismissRequest: () -> Unit) {
+    androidx.compose.material3.AlertDialog(
+        confirmButton = {
+            TextButton(
+                onClick = onDismissRequest
+            ) {
+                Text("Ok")
+            }
+        },
+        onDismissRequest = onDismissRequest,
+        text = {
+            Text("😢")
+        }
     )
 }
 
