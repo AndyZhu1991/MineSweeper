@@ -90,104 +90,121 @@ fun MainGameScreen(component: MainGameScreenComponent) {
         )
     }
 
-    Canvas(
-        modifier = Modifier
-            .fillMaxSize()
-            .pointerInput(Unit) {
-                detectTapGestures(
-                    onLongPress = {
-                        val (x, y) = calcMinePosition(it)
-                        gameInstance.onMineRightClick(y, x)
-                    },
-                    onTap = {
-                        val (x, y) = calcMinePosition(it)
-                        gameInstance.onMineTap(y, x)
-                    }
-                )
-            }
-            .pointerInput(Unit) {
-                detectTransformGestures { centroid, pan, zoom, _ ->
-                    matrix = matrix.transformed {
-                        translate(pan.x / scaleX(), pan.y / scaleY())
-                        scale(zoom, zoom, centroid.x, centroid.y)
-                    }
-                }
-            }
-            .mousePointerMatcher(MousePointerButton.Secondary) {
-                val (x, y) = calcMinePosition(it)
-                gameInstance.onMineRightClick(y, x)
-            }
-            .mousePointerMatcher(MousePointerButton.Tertiary) {
-                val (x, y) = calcMinePosition(it)
-                gameInstance.onMineMiddleClick(y, x)
-            }
-            .onPointerEvent(PointerEventType.Scroll) {
-                val pointerInputChange = it.changes.firstOrNull() ?: return@onPointerEvent
-                val position = pointerInputChange.position
-                val scrollOffset = pointerInputChange.scrollDelta.y
-                val scale = if (scrollOffset > 0) 0.8f else 1.25f
-                matrix = matrix.transformed {
-                    scale(scale, scale, position.x, position.y)
-                }
-                animateTargetMatrix = matrix
-            }
-            .onGloballyPositioned { coordinates ->
-                canvasSize = coordinates.size
-                if (matrix.isIdentity()) {
-                    val contentInner = Rect(
-                        canvasPaddings[0], canvasPaddings[1],
-                        canvasSize.width - canvasPaddings[2],
-                        canvasSize.height - canvasPaddings[3]
-                    )
-                    matrix = calcInitMatrix(
-                        mineSizePx, component.level.width, component.level.height,
-                        contentInner
-                    )
-                }
-            }
-    ) {
-        withTransform(
-            transformBlock = { transform(animatableMatrix.value) }
-        ) {
-            val invertedMatrix = animatableMatrix.value.inverted()
-            val canvasRect = Rect(Offset.Zero, canvasSize.toSize())
-            val viewPort = invertedMatrix.map(canvasRect)
-            drawMines(mapUI, textMeasure, MineDrawConfig, viewPort)
-        }
-    }
-
     val timeString by gameInstance.timeString.collectAsState("0")
     val minesRemaining by gameInstance.minesRemainingText.collectAsState("")
 
-    CenterAlignedTopAppBar(
-        colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.9f),
-        ),
-        title = {
-            Row {
-                Text(timeString)
-                Text(minesRemaining)
-            }
+    Scaffold(
+        topBar = {
+            CenterAlignedTopAppBar(
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.9f),
+                ),
+                title = {
+                    Row {
+                        Text(timeString)
+                        Text(minesRemaining)
+                    }
+                },
+                navigationIcon = {
+                    IconButton(onClick = component.onClose) {
+                        Icon(
+                            imageVector = Icons.Filled.ArrowBack,
+                            tint = MaterialTheme.colorScheme.onPrimary,
+                            contentDescription = "Localized description"
+                        )
+                    }
+                },
+                actions = {
+                    IconButton(onClick = component::onRefresh) {
+                        Icon(
+                            imageVector = Icons.Filled.Refresh,
+                            tint = MaterialTheme.colorScheme.onPrimary,
+                            contentDescription = "Localized description"
+                        )
+                    }
+                },
+            )
         },
-        navigationIcon = {
-            IconButton(onClick = component.onClose) {
-                Icon(
-                    imageVector = Icons.Filled.ArrowBack,
-                    tint = MaterialTheme.colorScheme.onPrimary,
-                    contentDescription = "Localized description"
-                )
-            }
-        },
-        actions = {
-            IconButton(onClick = component::onRefresh) {
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = component::onRefresh,
+                containerColor = MaterialTheme.colorScheme.primary,
+            ) {
                 Icon(
                     imageVector = Icons.Filled.Refresh,
                     tint = MaterialTheme.colorScheme.onPrimary,
                     contentDescription = "Localized description"
                 )
             }
-        },
-    )
+        }
+    ) {
+        Canvas(
+            modifier = Modifier
+                .fillMaxSize()
+                .pointerInput(Unit) {
+                    detectTapGestures(
+                        onLongPress = {
+                            val (x, y) = calcMinePosition(it)
+                            gameInstance.onMineRightClick(y, x)
+                        },
+                        onTap = {
+                            val (x, y) = calcMinePosition(it)
+                            gameInstance.onMineTap(y, x)
+                        }
+                    )
+                }
+                .pointerInput(Unit) {
+                    detectTransformGestures { centroid, pan, zoom, _ ->
+                        matrix = matrix.transformed {
+                            translate(pan.x / scaleX(), pan.y / scaleY())
+                            scale(zoom, zoom, centroid.x, centroid.y)
+                        }
+                    }
+                }
+                .mousePointerMatcher(MousePointerButton.Secondary) {
+                    val (x, y) = calcMinePosition(it)
+                    gameInstance.onMineRightClick(y, x)
+                }
+                .mousePointerMatcher(MousePointerButton.Tertiary) {
+                    val (x, y) = calcMinePosition(it)
+                    gameInstance.onMineMiddleClick(y, x)
+                }
+                .onPointerEvent(PointerEventType.Scroll) {
+                    val pointerInputChange = it.changes.firstOrNull() ?: return@onPointerEvent
+                    val position = pointerInputChange.position
+                    val scrollOffset = pointerInputChange.scrollDelta.y
+                    val scale = if (scrollOffset > 0) 0.8f else 1.25f
+                    matrix = matrix.transformed {
+                        scale(scale, scale, position.x, position.y)
+                    }
+                    animateTargetMatrix = matrix
+                }
+                .onGloballyPositioned { coordinates ->
+                    canvasSize = coordinates.size
+                    if (matrix.isIdentity()) {
+                        val contentInner = Rect(
+                            canvasPaddings[0], canvasPaddings[1],
+                            canvasSize.width - canvasPaddings[2],
+                            canvasSize.height - canvasPaddings[3]
+                        )
+                        matrix = calcInitMatrix(
+                            mineSizePx, component.level.width, component.level.height,
+                            contentInner
+                        )
+                    }
+                }
+        ) {
+            withTransform(
+                transformBlock = { transform(animatableMatrix.value) }
+            ) {
+                val invertedMatrix = animatableMatrix.value.inverted()
+                val canvasRect = Rect(Offset.Zero, canvasSize.toSize())
+                val viewPort = invertedMatrix.map(canvasRect)
+                drawMines(mapUI, textMeasure, MineDrawConfig, viewPort)
+            }
+        }
+    }
+
 
     val succeed by gameInstance.succeed.collectAsState(false)
     val showSuccessDialog = remember { mutableStateOf(false) }
