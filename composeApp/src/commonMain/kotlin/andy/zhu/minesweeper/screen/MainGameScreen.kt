@@ -15,10 +15,10 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.statusBars
-import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material3.*
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.TopAppBarDefaults
@@ -161,7 +161,7 @@ fun MainGameScreen(component: MainGameScreenComponent) {
 
     CenterAlignedTopAppBar(
         colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = MaterialTheme.colors.primarySurface.copy(alpha = 0.9f),
+            containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.9f),
         ),
         title = {
             Row {
@@ -173,7 +173,7 @@ fun MainGameScreen(component: MainGameScreenComponent) {
             IconButton(onClick = component.onClose) {
                 Icon(
                     imageVector = Icons.Filled.ArrowBack,
-                    tint = MaterialTheme.colors.onPrimary,
+                    tint = MaterialTheme.colorScheme.onPrimary,
                     contentDescription = "Localized description"
                 )
             }
@@ -182,7 +182,7 @@ fun MainGameScreen(component: MainGameScreenComponent) {
             IconButton(onClick = component::onRefresh) {
                 Icon(
                     imageVector = Icons.Filled.Refresh,
-                    tint = MaterialTheme.colors.onPrimary,
+                    tint = MaterialTheme.colorScheme.onPrimary,
                     contentDescription = "Localized description"
                 )
             }
