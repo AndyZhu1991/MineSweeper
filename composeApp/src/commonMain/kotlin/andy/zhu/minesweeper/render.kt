@@ -40,18 +40,18 @@ private fun DrawScope.drawMine(item: GameInstance.MineItemUI,
                                drawConfig: MineDrawConfig,
                                offset: Offset) {
 
-    val paddingOffset = offset + Offset(drawConfig.padding.toPx(), drawConfig.padding.toPx())
+    val paddingOffset = offset + Offset(drawConfig.minePadding.toPx(), drawConfig.minePadding.toPx())
     val outerSize = drawConfig.mineSize.toSize()
     val innerSize = drawConfig.mineInnerSize.toSize()
     if (item != GameInstance.MineItemUI.Hidden) {
         drawRoundRect(
             Color.Gray, paddingOffset, innerSize,
-            CornerRadius(drawConfig.corner.toPx()), Stroke(1.dp.toPx())
+            CornerRadius(drawConfig.mineCorner.toPx()), Stroke(1.dp.toPx())
         )
     }
     when (item) {
         GameInstance.MineItemUI.Hidden -> {
-            drawRoundRect(drawConfig.hiddenItemColor, paddingOffset, innerSize, CornerRadius(drawConfig.corner.toPx()))
+            drawRoundRect(drawConfig.hiddenItemColor, paddingOffset, innerSize, CornerRadius(drawConfig.mineCorner.toPx()))
         }
 
         GameInstance.MineItemUI.Flagged -> {

@@ -11,7 +11,10 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -77,6 +80,16 @@ fun MainGameScreen(component: MainGameScreenComponent) {
         return IntOffset(xPos, yPos)
     }
 
+    val canvasPaddings = with(LocalDensity.current) {
+        val defaultPadding = MineDrawConfig.canvasPadding.toPx()
+        listOf(
+            defaultPadding,
+            WindowInsets.statusBars.getTop(this) + 66.dp.toPx() + defaultPadding,
+            defaultPadding,
+            WindowInsets.navigationBars.getBottom(this) + defaultPadding
+        )
+    }
+
     Canvas(
         modifier = Modifier
             .fillMaxSize()
@@ -121,8 +134,14 @@ fun MainGameScreen(component: MainGameScreenComponent) {
             .onGloballyPositioned { coordinates ->
                 canvasSize = coordinates.size
                 if (matrix.isIdentity()) {
-                    matrix = calcInitMatrix(mineSizePx, component.level.width, component.level.height,
-                                            Size(coordinates.size.width.toFloat(), coordinates.size.height.toFloat())
+                    val contentInner = Rect(
+                        canvasPaddings[0], canvasPaddings[1],
+                        canvasSize.width - canvasPaddings[2],
+                        canvasSize.height - canvasPaddings[3]
+                    )
+                    matrix = calcInitMatrix(
+                        mineSizePx, component.level.width, component.level.height,
+                        contentInner
                     )
                 }
             }
@@ -223,26 +242,26 @@ private fun FailureDialog(onDismissRequest: () -> Unit) {
     )
 }
 
-private fun calcInitMatrix(mineSize: Size, width: Int, height: Int, screenSize: Size): Matrix {
+private fun calcInitMatrix(mineSize: Size, width: Int, height: Int, contentInner: Rect): Matrix {
     val minesSize = Size(mineSize.width * width, mineSize.height * height)
-    val screenRect = Rect(Offset.Zero, screenSize)
 
-    val targetRect = if (minesSize.width < screenSize.width && minesSize.height < screenSize.height) {
-        Rect(Offset((screenRect.width - minesSize.width) / 2, (screenRect.height - minesSize.height) / 2), minesSize)
+    val targetRect = if (minesSize.width < contentInner.width && minesSize.height < contentInner.height) {
+        Rect(Offset((contentInner.width - minesSize.width) / 2 + contentInner.left,
+            (contentInner.height - minesSize.height) / 2 + contentInner.top), minesSize)
     } else {
         val minesRatio = minesSize.width / minesSize.height
-        val screenRatio = screenRect.width / screenRect.height
-        if (minesRatio < screenRatio) {
-            val targetHeight = screenRect.height
+        val contentRatio = contentInner.width / contentInner.height
+        if (minesRatio < contentRatio) {
+            val targetHeight = contentInner.height
             val targetWidth = minesRatio * targetHeight
-            val offsetX = (screenRect.width - targetWidth) / 2
-            val offsetY = 0f
+            val offsetX = (contentInner.width - targetWidth) / 2 + contentInner.left
+            val offsetY = contentInner.top
             Rect(Offset(offsetX, offsetY), Size(targetWidth, targetHeight))
         } else {
-            val targetWidth = screenRect.width
+            val targetWidth = contentInner.width
             val targetHeight = targetWidth / minesRatio
-            val offsetX = 0f
-            val offsetY = (screenRect.height - targetHeight) / 2
+            val offsetX = contentInner.left
+            val offsetY = (contentInner.height - targetHeight) / 2 + contentInner.top
             Rect(Offset(offsetX, offsetY), Size(targetWidth, targetHeight))
         }
     }
@@ -259,9 +278,10 @@ private fun calcInitMatrix(mineSize: Size, width: Int, height: Int, screenSize: 
 
 object MineDrawConfig {
     val mineSize = DpSize(48.dp, 48.dp)
-    val padding = 2.dp
-    val corner = 4.dp
-    val mineInnerSize = DpSize(mineSize.width - padding, mineSize.height - padding)
+    val minePadding = 2.dp
+    val mineCorner = 4.dp
+    val canvasPadding = 8.dp
+    val mineInnerSize = DpSize(mineSize.width - minePadding, mineSize.height - minePadding)
     val itemTextStyle = TextStyle(fontSize = 32.sp)
     val hiddenItemColor = Color.Gray.copy(alpha = 0.66f)
 }
