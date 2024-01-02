@@ -36,8 +36,10 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.unit.toSize
 import andy.zhu.minesweeper.drawMines
 import andy.zhu.minesweeper.navigation.MainGameScreenComponent
 import mousePointerMatcher
@@ -54,6 +56,7 @@ fun MainGameScreen(component: MainGameScreenComponent) {
     val animatableMatrix = remember {
         Animatable(Matrix(), MatrixConverter)
     }
+    var canvasSize = remember { IntSize.Zero }
 
     LaunchedEffect(matrix, animateTargetMatrix) {
         if (matrix == animateTargetMatrix) {
@@ -116,6 +119,7 @@ fun MainGameScreen(component: MainGameScreenComponent) {
                 animateTargetMatrix = matrix
             }
             .onGloballyPositioned { coordinates ->
+                canvasSize = coordinates.size
                 if (matrix.isIdentity()) {
                     matrix = calcInitMatrix(mineSizePx, component.level.width, component.level.height,
                                             Size(coordinates.size.width.toFloat(), coordinates.size.height.toFloat())
@@ -126,7 +130,10 @@ fun MainGameScreen(component: MainGameScreenComponent) {
         withTransform(
             transformBlock = { transform(animatableMatrix.value) }
         ) {
-            drawMines(mapUI, textMeasure, MineDrawConfig)
+            val invertedMatrix = animatableMatrix.value.inverted()
+            val canvasRect = Rect(Offset.Zero, canvasSize.toSize())
+            val viewPort = invertedMatrix.map(canvasRect)
+            drawMines(mapUI, textMeasure, MineDrawConfig, viewPort)
         }
     }
 

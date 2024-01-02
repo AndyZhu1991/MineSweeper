@@ -14,11 +14,25 @@ import androidx.compose.ui.unit.dp
 import andy.zhu.minesweeper.screen.MineDrawConfig
 
 
-internal fun DrawScope.drawMines(map: GameInstance.MineMapUI, textMeasurer: TextMeasurer, drawConfig: MineDrawConfig) {
-    map.enumeratedItems.forEach { (y, x, item) ->
-        drawMine(item, textMeasurer, drawConfig,
-                 Offset(x * drawConfig.mineSize.width.toPx(), y * drawConfig.mineSize.height.toPx()))
-    }
+internal fun DrawScope.drawMines(
+    map: GameInstance.MineMapUI,
+    textMeasurer: TextMeasurer,
+    drawConfig: MineDrawConfig,
+    viewPort: Rect,
+) {
+    val mineWidth = drawConfig.mineSize.width.toPx()
+    val mineHeight = drawConfig.mineSize.height.toPx()
+    val mineLeft = (viewPort.left / mineWidth).toInt()
+    val mineTop = (viewPort.top / mineHeight).toInt()
+    val mineRight = (viewPort.right / mineWidth).toInt()
+    val mineBottom = (viewPort.bottom / mineHeight).toInt()
+    map.enumeratedItems
+        .filter { (y, x, item) ->
+            x in mineLeft..mineRight && y in mineTop..mineBottom
+        }
+        .forEach { (y, x, item) ->
+            drawMine(item, textMeasurer, drawConfig, Offset(x * mineWidth, y * mineHeight))
+        }
 }
 
 private fun DrawScope.drawMine(item: GameInstance.MineItemUI,
