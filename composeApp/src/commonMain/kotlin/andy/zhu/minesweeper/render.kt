@@ -7,7 +7,6 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.text.TextMeasurer
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
@@ -26,40 +25,43 @@ private fun DrawScope.drawMine(item: GameInstance.MineItemUI,
                                textMeasurer: TextMeasurer,
                                drawConfig: MineDrawConfig,
                                offset: Offset) {
-    withTransform(
-        transformBlock = { translate(offset.x, offset.y) },
-        drawBlock = {
-            val paddingOffset = Offset(drawConfig.padding.toPx(), drawConfig.padding.toPx())
-            val outerSize = drawConfig.mineSize.toSize()
-            val innerSize = drawConfig.mineInnerSize.toSize()
-            if (item != GameInstance.MineItemUI.Hidden) {
-                drawRoundRect(Color.Gray, paddingOffset, innerSize,
-                              CornerRadius(drawConfig.corner.toPx()), Stroke(1.dp.toPx()))
-            }
-            when(item) {
-                GameInstance.MineItemUI.Hidden -> {
-                    drawRoundRect(drawConfig.hiddenItemColor, paddingOffset, innerSize, CornerRadius(drawConfig.corner.toPx()))
-                }
-                GameInstance.MineItemUI.Flagged -> {
-                    drawTextAtCenter(textMeasurer, "🚩", outerSize, drawConfig.itemTextStyle)
-                }
-                GameInstance.MineItemUI.Uncertain -> {
-                    drawTextAtCenter(textMeasurer, "❓", outerSize, drawConfig.itemTextStyle)
-                }
-                GameInstance.MineItemUI.OpenedBoom -> {
-                    drawTextAtCenter(textMeasurer, "💥", outerSize, drawConfig.itemTextStyle)
-                }
-                GameInstance.MineItemUI.MineView -> {
-                    drawTextAtCenter(textMeasurer, "💣", outerSize, drawConfig.itemTextStyle)
-                }
-                is GameInstance.MineItemUI.Opened -> {
-                    if (item.num != 0) {
-                        drawTextAtCenter(textMeasurer, item.num.toString(), outerSize, drawConfig.itemTextStyle)
-                    }
-                }
+
+    val paddingOffset = offset + Offset(drawConfig.padding.toPx(), drawConfig.padding.toPx())
+    val outerSize = drawConfig.mineSize.toSize()
+    val innerSize = drawConfig.mineInnerSize.toSize()
+    if (item != GameInstance.MineItemUI.Hidden) {
+        drawRoundRect(
+            Color.Gray, paddingOffset, innerSize,
+            CornerRadius(drawConfig.corner.toPx()), Stroke(1.dp.toPx())
+        )
+    }
+    when (item) {
+        GameInstance.MineItemUI.Hidden -> {
+            drawRoundRect(drawConfig.hiddenItemColor, paddingOffset, innerSize, CornerRadius(drawConfig.corner.toPx()))
+        }
+
+        GameInstance.MineItemUI.Flagged -> {
+            drawTextAtCenter(textMeasurer, "🚩", outerSize, drawConfig.itemTextStyle, offset)
+        }
+
+        GameInstance.MineItemUI.Uncertain -> {
+            drawTextAtCenter(textMeasurer, "❓", outerSize, drawConfig.itemTextStyle, offset)
+        }
+
+        GameInstance.MineItemUI.OpenedBoom -> {
+            drawTextAtCenter(textMeasurer, "💥", outerSize, drawConfig.itemTextStyle, offset)
+        }
+
+        GameInstance.MineItemUI.MineView -> {
+            drawTextAtCenter(textMeasurer, "💣", outerSize, drawConfig.itemTextStyle, offset)
+        }
+
+        is GameInstance.MineItemUI.Opened -> {
+            if (item.num != 0) {
+                drawTextAtCenter(textMeasurer, item.num.toString(), outerSize, drawConfig.itemTextStyle, offset)
             }
         }
-    )
+    }
 }
 
 private fun DrawScope.drawTextAtCenter(
@@ -78,6 +80,7 @@ private fun DrawScope.drawTextAtCenter(
         topLeft = Offset(
             x = drawRect.center.x - textLayoutResult.size.width / 2,
             y = drawRect.center.y - textLayoutResult.size.height / 2,
-        )
+        ),
+        size = Size(textLayoutResult.size.width.toFloat(), textLayoutResult.size.height.toFloat()),
     )
 }
