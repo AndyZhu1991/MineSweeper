@@ -38,9 +38,23 @@ class GameInstance(
     init {
         coroutineScope.launch {
             gameEnd.collect {
-                if (it) pauseTimer()
+                if (it) stopTimer()
             }
         }
+    }
+
+    fun onResume() {
+        if (timerJob == null && timeSeconds.value > 0) {
+            startTimer()
+        }
+    }
+
+    fun onPause() {
+        stopTimer()
+    }
+
+    fun onDestroy() {
+        coroutineScope.cancel()
     }
     
     private fun to1dIndex(y: Int, x: Int) = y * gameConfig.width + x
@@ -218,13 +232,9 @@ class GameInstance(
         }
     }
 
-    fun pauseTimer() {
+    private fun stopTimer() {
         timerJob?.cancel()
         timerJob = null
-    }
-
-    fun destroy() {
-        coroutineScope.cancel()
     }
     
     enum class GridStatus {

@@ -4,6 +4,8 @@ import andy.zhu.minesweeper.GameConfig
 import andy.zhu.minesweeper.GameInstance
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.essenty.lifecycle.doOnDestroy
+import com.arkivanov.essenty.lifecycle.doOnPause
+import com.arkivanov.essenty.lifecycle.doOnResume
 import io.github.aakira.napier.Napier
 import kotlinx.coroutines.flow.MutableStateFlow
 
@@ -15,11 +17,13 @@ class MainGameScreenComponent(
     val gameInstance = MutableStateFlow<GameInstance>(GameInstance(level))
 
     init {
-        doOnDestroy { gameInstance.value.destroy() }
+        doOnResume { gameInstance.value.onResume() }
+        doOnPause { gameInstance.value.onPause() }
+        doOnDestroy { gameInstance.value.onDestroy() }
     }
 
     fun onRefresh() {
-        gameInstance.value.destroy()
+        gameInstance.value.onDestroy()
         gameInstance.value = GameInstance(level)
         Napier.i("Game refreshed.")
     }
