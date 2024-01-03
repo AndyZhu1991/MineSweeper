@@ -1,5 +1,7 @@
 package andy.zhu.minesweeper
 
+import andy.zhu.minesweeper.extensions.combine
+import andy.zhu.minesweeper.extensions.map
 import getPlatform
 import kotlinx.coroutines.*
 

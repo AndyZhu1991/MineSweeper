@@ -47,7 +47,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.toSize
 import andy.zhu.minesweeper.GameInstance
+import andy.zhu.minesweeper.LoadMineCanvasPainter
 import andy.zhu.minesweeper.drawMines
+import andy.zhu.minesweeper.extensions.*
 import andy.zhu.minesweeper.navigation.MainGameScreenComponent
 import mousePointerMatcher
 import onPointerEvent
@@ -125,6 +127,7 @@ fun MainGameScreen(component: MainGameScreenComponent) {
         },
         floatingActionButton = { MineFab(gameInstance) }
     ) {
+        val mineCanvasPainters = LoadMineCanvasPainter()
         Canvas(
             modifier = Modifier
                 .fillMaxSize()
@@ -181,14 +184,7 @@ fun MainGameScreen(component: MainGameScreenComponent) {
                     }
                 }
         ) {
-            withTransform(
-                transformBlock = { transform(animatableMatrix.value) }
-            ) {
-                val invertedMatrix = animatableMatrix.value.inverted()
-                val canvasRect = Rect(Offset.Zero, canvasSize.toSize())
-                val viewPort = invertedMatrix.map(canvasRect)
-                drawMines(mapUI, textMeasure, MineDrawConfig, viewPort)
-            }
+            drawMines(animatableMatrix.value, mapUI, textMeasure, MineDrawConfig, mineCanvasPainters)
         }
     }
 
@@ -343,49 +339,17 @@ object MineDrawConfig {
     val minePadding = 2.dp
     val mineCorner = 4.dp
     val canvasPadding = 8.dp
-    val mineInnerSize = DpSize(mineSize.width - minePadding, mineSize.height - minePadding)
+    val borderSize = DpSize(
+        mineSize.width - minePadding * 2,
+        mineSize.height - minePadding * 2
+    )
     val itemTextStyle = TextStyle(fontSize = 32.sp)
     val hiddenItemColor = Color.Gray.copy(alpha = 0.66f)
-}
-
-private fun Matrix.transformed(block: Matrix.() -> Unit): Matrix {
-    return Matrix(values.copyOf()).apply(block)
-}
-
-private fun Matrix.copy(): Matrix {
-    return Matrix(values.copyOf())
-}
-
-private fun Matrix.inverted(): Matrix {
-    return transformed { invert() }
-}
-
-private fun Matrix.scaleX(): Float {
-    return this.values[Matrix.ScaleX]
-}
-
-private fun Matrix.scaleY(): Float {
-    return this.values[Matrix.ScaleY]
-}
-
-private fun Matrix.translateX(): Float {
-    return this.values[Matrix.TranslateX]
-}
-
-private fun Matrix.translateY(): Float {
-    return this.values[Matrix.TranslateY]
-}
-
-private fun Matrix.scale(scaleX: Float, scaleY: Float, pivotX: Float, pivotY: Float) {
-    val deltaX = (pivotX - translateX()) / this.scaleX()
-    val deltaY = (pivotY - translateY()) / this.scaleY()
-    translate(deltaX, deltaY)
-    scale(scaleX, scaleY)
-    translate(-deltaX, -deltaY)
-}
-
-private fun Matrix.postTranslate(translateX: Float, translateY: Float) {
-    translate(translateX / scaleX(), translateY / scaleY())
+    val innerPadding = 4.dp
+    val vectorSize = DpSize(
+        mineSize.width - minePadding * 2 - innerPadding * 2,
+        mineSize.height - minePadding * 2 - innerPadding * 2
+    )
 }
 
 object MatrixConverter : TwoWayConverter<Matrix, AnimationVector4D> {

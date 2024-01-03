@@ -1,5 +1,6 @@
-package andy.zhu.minesweeper
+package andy.zhu.minesweeper.extensions
 
+import androidx.compose.ui.graphics.Matrix
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -28,4 +29,44 @@ fun <T1, T2, M> StateFlow<T1>.combine(
         SharingStarted.Eagerly,
         mapper(value, other.value)
     )
+}
+
+fun Matrix.transformed(block: Matrix.() -> Unit): Matrix {
+    return Matrix(values.copyOf()).apply(block)
+}
+
+fun Matrix.copy(): Matrix {
+    return Matrix(values.copyOf())
+}
+
+fun Matrix.inverted(): Matrix {
+    return transformed { invert() }
+}
+
+fun Matrix.scaleX(): Float {
+    return this.values[Matrix.ScaleX]
+}
+
+fun Matrix.scaleY(): Float {
+    return this.values[Matrix.ScaleY]
+}
+
+fun Matrix.translateX(): Float {
+    return this.values[Matrix.TranslateX]
+}
+
+fun Matrix.translateY(): Float {
+    return this.values[Matrix.TranslateY]
+}
+
+fun Matrix.scale(scaleX: Float, scaleY: Float, pivotX: Float, pivotY: Float) {
+    val deltaX = (pivotX - translateX()) / this.scaleX()
+    val deltaY = (pivotY - translateY()) / this.scaleY()
+    translate(deltaX, deltaY)
+    scale(scaleX, scaleY)
+    translate(-deltaX, -deltaY)
+}
+
+fun Matrix.postTranslate(translateX: Float, translateY: Float) {
+    translate(translateX / scaleX(), translateY / scaleY())
 }
