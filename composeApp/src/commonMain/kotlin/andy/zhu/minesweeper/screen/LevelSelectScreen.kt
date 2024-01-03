@@ -19,9 +19,24 @@ fun LevelSelectScreen(component: LevelSelectScreenComponent) {
         verticalArrangement = Arrangement.Center,
     ) {
         Button(
-            onClick = { component.onLevelSelected(GameConfig.Low) },
+            onClick = { component.onLevelSelected(GameConfig.Easy) },
         ) {
             Text("Low")
+        }
+        Button(
+            onClick = { component.onLevelSelected(GameConfig.Medium) },
+            ) {
+            Text("Medium")
+        }
+        Button(
+            onClick = { component.onLevelSelected(GameConfig.Hard) },
+            ) {
+            Text("Hard")
+        }
+        Button(
+            onClick = { component.onLevelSelected(GameConfig.Custom(100, 70, 1000)) },
+            ) {
+            Text("OMG")
         }
     }
 }

@@ -8,6 +8,7 @@ import androidx.compose.ui.input.pointer.PointerEventType
 interface Platform {
     val name: String
     val isMobile: Boolean
+    val isLandscape: Boolean get() { return isMobile }
 }
 
 expect fun getPlatform(): Platform

@@ -2,6 +2,7 @@ package andy.zhu.minesweeper.navigation
 
 import andy.zhu.minesweeper.GameConfig
 import com.arkivanov.decompose.ComponentContext
+import getPlatform
 
 class LevelSelectScreenComponent(
     componentContext: ComponentContext,
@@ -9,6 +10,6 @@ class LevelSelectScreenComponent(
 ) : ComponentContext by componentContext {
     
     fun onLevelSelected(level: GameConfig) {
-        startGame(level)
+        startGame(if (getPlatform().isLandscape) level.rotate() else level)
     }
 }
