@@ -1,4 +1,4 @@
-@file:OptIn(ExperimentalMaterial3Api::class)
+@file:OptIn(ExperimentalMaterial3Api::class, ExperimentalResourceApi::class)
 
 package andy.zhu.minesweeper.screen
 
@@ -14,6 +14,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -23,6 +25,7 @@ import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
@@ -48,6 +51,8 @@ import andy.zhu.minesweeper.drawMines
 import andy.zhu.minesweeper.navigation.MainGameScreenComponent
 import mousePointerMatcher
 import onPointerEvent
+import org.jetbrains.compose.resources.ExperimentalResourceApi
+import org.jetbrains.compose.resources.painterResource
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -91,21 +96,13 @@ fun MainGameScreen(component: MainGameScreenComponent) {
         )
     }
 
-    val timeString by gameInstance.timeString.collectAsState("0")
-    val minesRemaining by gameInstance.minesRemainingText.collectAsState("")
-
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.9f),
                 ),
-                title = {
-                    Row {
-                        Text(timeString)
-                        Text(minesRemaining)
-                    }
-                },
+                title = { Title(gameInstance) },
                 navigationIcon = {
                     IconButton(onClick = component.onClose) {
                         Icon(
@@ -233,6 +230,46 @@ private fun SuccessDialog(onDismissRequest: () -> Unit) {
 }
 
 @Composable
+private fun Title(gameInstance: GameInstance) {
+    val timeString by gameInstance.timeString.collectAsState("0")
+    val minesRemaining by gameInstance.minesRemainingText.collectAsState("")
+
+    Row {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                painter = painterResource("clock.xml"),
+                contentDescription = null,
+                modifier = Modifier.size(32.dp),
+                tint = MaterialTheme.colorScheme.onPrimary,
+            )
+            Text(
+                timeString,
+                modifier = Modifier.padding(start = 4.dp),
+                color = MaterialTheme.colorScheme.onPrimary,
+                style = MaterialTheme.typography.headlineMedium,
+            )
+        }
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(start = 24.dp),
+        ) {
+            Icon(
+                painter = painterResource("mine.xml"),
+                contentDescription = null,
+                modifier = Modifier.size(32.dp),
+                tint = MaterialTheme.colorScheme.onPrimary,
+            )
+            Text(
+                minesRemaining,
+                modifier = Modifier.padding(start = 4.dp),
+                color = MaterialTheme.colorScheme.onPrimary,
+                style = MaterialTheme.typography.headlineMedium,
+            )
+        }
+    }
+}
+
+@Composable
 private fun MineFab(gameInstance: GameInstance) {
     val flagWhenTap by gameInstance.flagWhenTap.collectAsState()
 
@@ -241,7 +278,11 @@ private fun MineFab(gameInstance: GameInstance) {
             onClick = gameInstance::switchTapAction,
             containerColor = MaterialTheme.colorScheme.primary,
         ) {
-            Text(if (flagWhenTap) "🚩" else "🔨")
+            Icon(
+                painter = painterResource(if (flagWhenTap) "flag.xml" else "mine.xml"),
+                contentDescription = "",
+                modifier = Modifier.size(36.dp),
+            )
         }
     }
 }

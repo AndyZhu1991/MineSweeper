@@ -29,7 +29,7 @@ class GameInstance(
         return@map if (remaining >= 0) remaining else 0
     }
 
-    val minesRemainingText = minesRemaining.map(coroutineScope) { "💣$it" }
+    val minesRemainingText = minesRemaining.map(coroutineScope) { it.toString() }
 
     val showFab = getPlatform().isMobile
     private val _flagWhenTap = MutableStateFlow(getPlatform().isMobile)  // Flag the grid when tap
