@@ -43,6 +43,7 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.toSize
+import andy.zhu.minesweeper.GameInstance
 import andy.zhu.minesweeper.drawMines
 import andy.zhu.minesweeper.navigation.MainGameScreenComponent
 import mousePointerMatcher
@@ -125,18 +126,7 @@ fun MainGameScreen(component: MainGameScreenComponent) {
                 },
             )
         },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = component::onRefresh,
-                containerColor = MaterialTheme.colorScheme.primary,
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.Refresh,
-                    tint = MaterialTheme.colorScheme.onPrimary,
-                    contentDescription = "Localized description"
-                )
-            }
-        }
+        floatingActionButton = { MineFab(gameInstance) }
     ) {
         Canvas(
             modifier = Modifier
@@ -240,6 +230,20 @@ private fun SuccessDialog(onDismissRequest: () -> Unit) {
             Text("Congratuation!")
         }
     )
+}
+
+@Composable
+private fun MineFab(gameInstance: GameInstance) {
+    val flagWhenTap by gameInstance.flagWhenTap.collectAsState()
+
+    if (gameInstance.showFab) {
+        FloatingActionButton(
+            onClick = gameInstance::switchTapAction,
+            containerColor = MaterialTheme.colorScheme.primary,
+        ) {
+            Text(if (flagWhenTap) "🚩" else "🔨")
+        }
+    }
 }
 
 @Composable

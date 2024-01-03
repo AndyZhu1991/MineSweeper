@@ -1,5 +1,6 @@
 package andy.zhu.minesweeper
 
+import getPlatform
 import kotlinx.coroutines.*
 
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -29,6 +30,10 @@ class GameInstance(
     }
 
     val minesRemainingText = minesRemaining.map(coroutineScope) { "💣$it" }
+
+    val showFab = getPlatform().isMobile
+    private val _flagWhenTap = MutableStateFlow(getPlatform().isMobile)  // Flag the grid when tap
+    val flagWhenTap: StateFlow<Boolean> = _flagWhenTap
 
     val gameWin = openedCount.map(coroutineScope) { it == gameConfig.mapSize() - gameConfig.mineCount }
     val gameOver = MutableStateFlow(false)
@@ -63,11 +68,25 @@ class GameInstance(
         if (!position.isValid() or gameEnd.value) {
             return
         }
-        if (status[position] == GridStatus.HIDDEN) {
-            if (openedCount.value == 0) {
-                startTimer()
+
+        when (status[position]) {
+            GridStatus.HIDDEN -> {
+                if (openedCount.value != 0 && flagWhenTap.value) {
+                    switchStatus(position)
+                } else {
+                    openGrids(listOf(position))
+                }
             }
-            openGrids(listOf(position))
+            GridStatus.FLAGGED, GridStatus.UNCERTAIN -> {
+                if (flagWhenTap.value) {
+                    switchStatus(position)
+                }
+            }
+            GridStatus.OPENED -> {
+                if (getPlatform().isMobile) {
+                    tryOpenNeighbours(position)
+                }
+            }
         }
     }
 
@@ -75,7 +94,11 @@ class GameInstance(
         if (!position.isValid() or gameEnd.value) {
             return
         }
-        switchStatus(position)
+        if (flagWhenTap.value) {
+            openGrids(listOf(position))
+        } else {
+            switchStatus(position)
+        }
     }
 
     fun onMineRightClick(position: Position) {
@@ -90,6 +113,10 @@ class GameInstance(
             return
         }
         tryOpenNeighbours(position)
+    }
+
+    fun switchTapAction() {
+        _flagWhenTap.value = !_flagWhenTap.value
     }
 
     private fun indexToPosition(index: Int): Position {
@@ -212,6 +239,9 @@ class GameInstance(
     }
 
     private fun openGrids(positions: List<Position>): List<Position> {
+        if (openedCount.value == 0) {
+            startTimer()
+        }
         val queue = positions.filter { status[it] == GridStatus.HIDDEN }.toMutableList()
         var index = 0
         while (index < queue.size) {
