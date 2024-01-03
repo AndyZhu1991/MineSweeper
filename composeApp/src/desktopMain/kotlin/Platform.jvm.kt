@@ -8,11 +8,13 @@ import androidx.compose.ui.input.pointer.*
 
 import androidx.compose.ui.input.pointer.onPointerEvent as jvmOnPointerEvent
 
-class JVMPlatform: Platform {
+object JVMPlatform: Platform {
     override val name: String = "Java ${System.getProperty("java.version")}"
+
+    override val isMobile: Boolean = false
 }
 
-actual fun getPlatform(): Platform = JVMPlatform()
+actual fun getPlatform(): Platform = JVMPlatform
 
 @OptIn(ExperimentalFoundationApi::class)
 actual fun Modifier.mousePointerMatcher(

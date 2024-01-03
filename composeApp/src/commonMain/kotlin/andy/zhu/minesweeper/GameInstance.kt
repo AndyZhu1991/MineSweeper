@@ -1,7 +1,9 @@
 package andy.zhu.minesweeper
 
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.*
+
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 
 class GameInstance(
     val gameConfig: GameConfig,
@@ -16,22 +18,22 @@ class GameInstance(
 
     private var timerJob: Job? = null
     private val timeSeconds = MutableStateFlow<Int>(0)
-    val timeString: Flow<String> = timeSeconds.map(::toTimeString)
+    val timeString: StateFlow<String> = timeSeconds.map(coroutineScope, ::toTimeString)
 
     private val openedCount = MutableStateFlow(0)
     private val flaggedCount = MutableStateFlow(0)
 
-    private val minesRemaining = flaggedCount.map {
+    private val minesRemaining = flaggedCount.map(coroutineScope) {
         val remaining = gameConfig.mineCount - it
         return@map if (remaining >= 0) remaining else 0
     }
 
-    val minesRemainingText = minesRemaining.map { "💣$it" }
+    val minesRemainingText = minesRemaining.map(coroutineScope) { "💣$it" }
 
-    val succeed = openedCount.map { it == gameConfig.mapSize() - gameConfig.mineCount }
-    val failed = MutableStateFlow(false)
+    val gameWin = openedCount.map(coroutineScope) { it == gameConfig.mapSize() - gameConfig.mineCount }
+    val gameOver = MutableStateFlow(false)
 
-    private val gameEnd = succeed.combine(failed) { succeed, failed ->
+    private val gameEnd = gameWin.combine(coroutineScope, gameOver) { succeed, failed ->
         succeed || failed
     }
 
@@ -44,7 +46,7 @@ class GameInstance(
     }
 
     fun onResume() {
-        if (timerJob == null && timeSeconds.value > 0) {
+        if (timerJob == null && openedCount.value > 0) {
             startTimer()
         }
     }
@@ -56,15 +58,42 @@ class GameInstance(
     fun onDestroy() {
         coroutineScope.cancel()
     }
-    
-    private fun to1dIndex(y: Int, x: Int) = y * gameConfig.width + x
-    
-    private fun to2dIndex(index: Int): Pair<Int, Int> {
-        return index / gameConfig.width to index % gameConfig.width
+
+    fun onMineTap(position: Position) {
+        if (!position.isValid() or gameEnd.value) {
+            return
+        }
+        if (status[position] == GridStatus.HIDDEN) {
+            if (openedCount.value == 0) {
+                startTimer()
+            }
+            openGrids(listOf(position))
+        }
     }
-    
-    private fun isValidPosition(y: Int, x: Int): Boolean {
-        return y >= 0 && y < gameConfig.height && x >= 0 && x < gameConfig.width
+
+    fun onMineLongTap(position: Position) {
+        if (!position.isValid() or gameEnd.value) {
+            return
+        }
+        switchStatus(position)
+    }
+
+    fun onMineRightClick(position: Position) {
+        if (!position.isValid() or gameEnd.value) {
+            return
+        }
+        switchStatus(position)
+    }
+
+    fun onMineMiddleClick(position: Position) {
+        if (!position.isValid() or gameEnd.value) {
+            return
+        }
+        tryOpenNeighbours(position)
+    }
+
+    private fun indexToPosition(index: Int): Position {
+        return Position(index % gameConfig.width, index / gameConfig.width)
     }
 
     private fun createInitialMines(gameConfig: GameConfig): BooleanArray {
@@ -79,29 +108,31 @@ class GameInstance(
     private fun calcMineCounts(): IntArray {
         val mineCount = IntArray(gameConfig.mapSize())
         positions()
-            .filterNot { hasMine(it.first, it.second) }
-            .forEach { (y, x) ->
-                mineCount[to1dIndex(y, x)] = calcMineCount(y, x)
+            .filterNot { hasMine[it] }
+            .forEach {
+                mineCount[it] = calcMineCount(it)
             }
         return mineCount
     }
     
-    private fun neighbours(y: Int, x: Int): List<Pair<Int, Int>> {
+    private fun neighbours(position: Position): List<Position> {
+        val x = position.x
+        val y = position.y
         return listOf(
-            y - 1 to x - 1,
-            y - 1 to x    ,
-            y - 1 to x + 1,
-            y     to x - 1,
-            y     to x + 1,
-            y + 1 to x - 1,
-            y + 1 to x    ,
-            y + 1 to x + 1,
+            Position(x = x - 1, y = y - 1),
+            Position(x = x    , y = y - 1),
+            Position(x = x + 1, y = y - 1),
+            Position(x = x - 1, y = y    ),
+            Position(x = x + 1, y = y    ),
+            Position(x = x - 1, y = y + 1),
+            Position(x = x    , y = y + 1),
+            Position(x = x + 1, y = y + 1),
             )
-            .filter { isValidPosition(it.first, it.second) }
+            .filter(Position::isValid)
     }
     
-    private fun calcMineCount(y: Int, x: Int): Int {
-        return neighbours(y, x).count { hasMine(it.first, it.second) }
+    private fun calcMineCount(position: Position): Int {
+        return neighbours(position).count { hasMine[it] }
     }
     
     private fun buildMapUI(): MineMapUI {
@@ -126,60 +157,41 @@ class GameInstance(
         _mapUIFlow.value = buildMapUI()
     }
     
-    fun positions(): Sequence<Pair<Int, Int>> {
+    private fun positions(): Sequence<Position> {
         return (0 until gameConfig.mapSize())
             .asSequence()
-            .map(::to2dIndex)
+            .map(::indexToPosition)
+    }
+
+    private operator fun BooleanArray.get(position: Position): Boolean {
+        return this[position.flattenedIndex()]
+    }
+
+    private operator fun IntArray.get(position: Position): Int {
+        return this[position.flattenedIndex()]
+    }
+
+    private operator fun IntArray.set(position: Position, count: Int) {
+        this[position.flattenedIndex()] = count
+    }
+
+    private operator fun Array<GridStatus>.get(position: Position): GridStatus {
+        return this[position.flattenedIndex()]
+    }
+
+    private operator fun Array<GridStatus>.set(position: Position, status: GridStatus) {
+        this[position.flattenedIndex()] = status
     }
     
-    fun hasMine(y: Int, x: Int): Boolean {
-        return hasMine[to1dIndex(y, x)]
-    }
-    
-    fun mineCount(y: Int, x: Int): Int {
-        return mineCount[to1dIndex(y, x)]
-    }
-    
-    fun status(y: Int, x: Int): GridStatus {
-        return status[to1dIndex(y, x)]
-    }
-    
-    private fun setStatus(y: Int, x: Int, status: GridStatus) {
-        this.status[to1dIndex(y, x)] = status
-    }
-    
-    fun onMineTap(y: Int, x: Int) {
-        if (!isValidPosition(y, x)) {
-            return
-        }
-        if (status(y, x) == GridStatus.HIDDEN) {
-            openGrid(y, x)
-            startTimer()
-            updateMapUI()
-        }
-    }
-    
-    fun onMineLongTap(y: Int, x: Int) {
-        switchStatus(y, x)
-    }
-    
-    fun onMineRightClick(y: Int, x: Int) {
-        switchStatus(y, x)
-    }
-    
-    fun onMineMiddleClick(y: Int, x: Int) {
-        tryOpenNeighbours(y, x)
-    }
-    
-    private fun switchStatus(y: Int, x: Int) {
-        val oldStatus = status(y, x)
+    private fun switchStatus(position: Position) {
+        val oldStatus = status[position]
         val newStatus = when(oldStatus) {
             GridStatus.HIDDEN -> GridStatus.FLAGGED
             GridStatus.OPENED -> GridStatus.OPENED
             GridStatus.FLAGGED -> GridStatus.HIDDEN
             GridStatus.UNCERTAIN -> GridStatus.HIDDEN
         }
-        setStatus(y, x, newStatus)
+        status[position] = newStatus
         updateMapUI()
         if (oldStatus == GridStatus.FLAGGED) {
             flaggedCount.value--
@@ -188,37 +200,37 @@ class GameInstance(
         }
     }
     
-    private fun tryOpenNeighbours(y: Int, x: Int) {
-        if (status(y, x) == GridStatus.OPENED && mineCount(y, x) > 0) {
-            val neighbours = neighbours(y, x)
-            val flagCount = neighbours.count { status(it.first, it.second) == GridStatus.FLAGGED }
-            val hiddens = neighbours.filter { status(it.first, it.second) == GridStatus.HIDDEN }
-            if (flagCount == mineCount(y, x) && hiddens.isNotEmpty()) {
-                hiddens.forEach { (y, x) ->
-                    openGrid(y, x)
-                }
-                updateMapUI()
+    private fun tryOpenNeighbours(position: Position) {
+        if (status[position] == GridStatus.OPENED && mineCount[position] > 0) {
+            val neighbours = neighbours(position)
+            val flagCount = neighbours.count { status[it] == GridStatus.FLAGGED }
+            val hiddens = neighbours.filter { status[it] == GridStatus.HIDDEN }
+            if (flagCount == mineCount[position] && hiddens.isNotEmpty()) {
+                openGrids(hiddens)
             }
         }
     }
-    
-    private fun openGrid(y: Int, x: Int) {
-        if (status(y, x) != GridStatus.HIDDEN) {
-            return
-        }
-        setStatus(y, x, GridStatus.OPENED)
-        if (hasMine(y, x)) {
-            failed.value = true
-        } else {
-            openedCount.value++
-            if (mineCount(y, x) == 0) {
-                neighbours(y, x)
-                    .filter { status(it.first, it.second) == GridStatus.HIDDEN }
-                    .forEach { (y, x) ->
-                        openGrid(y, x)
+
+    private fun openGrids(positions: List<Position>): List<Position> {
+        val queue = positions.filter { status[it] == GridStatus.HIDDEN }.toMutableList()
+        var index = 0
+        while (index < queue.size) {
+            val position = queue[index]
+            if (status[position] == GridStatus.HIDDEN) {
+                status[position] = GridStatus.OPENED
+                if (hasMine[position]) {
+                    gameOver.value = true
+                } else {
+                    openedCount.value++
+                    if (mineCount[position] == 0) {
+                        queue.addAll(neighbours(position).filter { status[it] == GridStatus.HIDDEN })
                     }
+                }
             }
+            index++
         }
+        updateMapUI()
+        return queue
     }
 
     private fun startTimer() {
@@ -261,6 +273,16 @@ class GameInstance(
             val y = index / gameConfig.width
             val x = index % gameConfig.width
             Triple(y, x, item)
+        }
+    }
+
+    inner class Position(val x: Int, val y: Int) {
+        fun isValid(): Boolean {
+            return x >= 0 && x < gameConfig.width && y >= 0 && y < gameConfig.height
+        }
+
+        fun flattenedIndex(): Int {
+            return y * gameConfig.width + x
         }
     }
 

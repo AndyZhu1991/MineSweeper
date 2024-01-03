@@ -145,11 +145,11 @@ fun MainGameScreen(component: MainGameScreenComponent) {
                     detectTapGestures(
                         onLongPress = {
                             val (x, y) = calcMinePosition(it)
-                            gameInstance.onMineRightClick(y, x)
+                            gameInstance.onMineLongTap(gameInstance.Position(x, y))
                         },
                         onTap = {
                             val (x, y) = calcMinePosition(it)
-                            gameInstance.onMineTap(y, x)
+                            gameInstance.onMineTap(gameInstance.Position(x, y))
                         }
                     )
                 }
@@ -163,11 +163,11 @@ fun MainGameScreen(component: MainGameScreenComponent) {
                 }
                 .mousePointerMatcher(MousePointerButton.Secondary) {
                     val (x, y) = calcMinePosition(it)
-                    gameInstance.onMineRightClick(y, x)
+                    gameInstance.onMineRightClick(gameInstance.Position(x, y))
                 }
                 .mousePointerMatcher(MousePointerButton.Tertiary) {
                     val (x, y) = calcMinePosition(it)
-                    gameInstance.onMineMiddleClick(y, x)
+                    gameInstance.onMineMiddleClick(gameInstance.Position(x, y))
                 }
                 .onPointerEvent(PointerEventType.Scroll) {
                     val pointerInputChange = it.changes.firstOrNull() ?: return@onPointerEvent
@@ -206,7 +206,7 @@ fun MainGameScreen(component: MainGameScreenComponent) {
     }
 
 
-    val succeed by gameInstance.succeed.collectAsState(false)
+    val succeed by gameInstance.gameWin.collectAsState(false)
     val showSuccessDialog = remember { mutableStateOf(false) }
     LaunchedEffect(succeed) {
         showSuccessDialog.value = succeed
@@ -215,7 +215,7 @@ fun MainGameScreen(component: MainGameScreenComponent) {
         SuccessDialog { showSuccessDialog.value = false }
     }
 
-    val failed by gameInstance.failed.collectAsState(false)
+    val failed by gameInstance.gameOver.collectAsState(false)
     val showFailedDialog = remember { mutableStateOf(false) }
     LaunchedEffect(failed) {
         showFailedDialog.value = failed
@@ -227,7 +227,7 @@ fun MainGameScreen(component: MainGameScreenComponent) {
 
 @Composable
 private fun SuccessDialog(onDismissRequest: () -> Unit) {
-    androidx.compose.material3.AlertDialog(
+    AlertDialog(
         confirmButton = {
             TextButton(
                 onClick = onDismissRequest
@@ -244,7 +244,7 @@ private fun SuccessDialog(onDismissRequest: () -> Unit) {
 
 @Composable
 private fun FailureDialog(onDismissRequest: () -> Unit) {
-    androidx.compose.material3.AlertDialog(
+    AlertDialog(
         confirmButton = {
             TextButton(
                 onClick = onDismissRequest
