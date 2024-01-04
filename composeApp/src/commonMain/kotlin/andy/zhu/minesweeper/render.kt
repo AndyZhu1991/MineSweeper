@@ -43,7 +43,7 @@ internal fun DrawScope.drawMines(
             x in mineLeft..mineRight && y in mineTop..mineBottom
         }
         .forEach { (y, x, item) ->
-            drawMine(transform, item, textMeasurer, drawConfig,Offset(x * mineWidth, y * mineHeight), mineCanvasPainters)
+            drawMineWithVector(transform, item, textMeasurer, drawConfig,Offset(x * mineWidth, y * mineHeight), mineCanvasPainters)
         }
 }
 
@@ -175,10 +175,10 @@ private fun DrawScope.drawVector(painter: Painter, rect: Rect) {
 @OptIn(ExperimentalResourceApi::class)
 @Composable
 fun LoadMineCanvasPainter() = MineCanvasPainters(
-    (0 until 10).map { painterResource("numeric_$it.xml") },
-    painterResource("mine.xml"),
-    painterResource("flag.xml"),
-    painterResource("question_mark.xml"),
+    (0 until 10).map { painterResource("numeric_$it.png") },
+    painterResource("mine.png"),
+    painterResource("flag.png"),
+    painterResource("question_mark.png"),
 )
 
 class MineCanvasPainters(
