@@ -336,8 +336,8 @@ private fun calcInitMatrix(mineSize: Size, width: Int, height: Int, contentInner
 
 object MineDrawConfig {
     val mineSize = DpSize(48.dp, 48.dp)
-    val minePadding = 2.dp
-    val mineCorner = 4.dp
+    val minePadding = 1.dp
+    val mineCorner = 3.dp
     val canvasPadding = 8.dp
     val borderSize = DpSize(
         mineSize.width - minePadding * 2,

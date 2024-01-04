@@ -1,5 +1,6 @@
 package andy.zhu.minesweeper
 
+import androidx.compose.ui.geometry.Offset
 import andy.zhu.minesweeper.extensions.combine
 import andy.zhu.minesweeper.extensions.map
 import getPlatform
@@ -13,9 +14,9 @@ class GameInstance(
 ) {
     private val coroutineScope = CoroutineScope(Dispatchers.Default)
 
-    private val hasMine = createInitialMines(gameConfig)
-    private val mineCount = calcMineCounts()
-    private val status = Array<GridStatus>(gameConfig.mapSize()) { GridStatus.HIDDEN }
+    private val hasMine = BooleanArray(gameConfig.mapSize())
+    private val mineCount = IntArray(gameConfig.mapSize())
+    private val status = Array(gameConfig.mapSize()) { GridStatus.HIDDEN }
     private val _mapUIFlow: MutableStateFlow<MineMapUI> = MutableStateFlow(buildMapUI())
     val mapUIFlow: StateFlow<MineMapUI> = _mapUIFlow
 
@@ -125,23 +126,21 @@ class GameInstance(
         return Position(index % gameConfig.width, index / gameConfig.width)
     }
 
-    private fun createInitialMines(gameConfig: GameConfig): BooleanArray {
-        val mines = BooleanArray(gameConfig.mapSize())
+    private fun initMinesArray(firstHit: Position) {
+        val noMineIndices = (neighbours(firstHit) + listOf(firstHit)).map(Position::flattenedIndex)
         (0 until gameConfig.mapSize())
                 .shuffled()
+                .filterNot(noMineIndices::contains)
                 .take(gameConfig.mineCount)
-                .forEach { mines[it] = true }
-        return mines
+                .forEach { hasMine[it] = true }
     }
     
-    private fun calcMineCounts(): IntArray {
-        val mineCount = IntArray(gameConfig.mapSize())
+    private fun initCountArray() {
         positions()
             .filterNot { hasMine[it] }
             .forEach {
                 mineCount[it] = calcMineCount(it)
             }
-        return mineCount
     }
     
     private fun neighbours(position: Position): List<Position> {
@@ -243,6 +242,8 @@ class GameInstance(
     private fun openGrids(positions: List<Position>): List<Position> {
         if (openedCount.value == 0) {
             startTimer()
+            initMinesArray(positions[0])
+            initCountArray()
         }
         val queue = positions.filter { status[it] == GridStatus.HIDDEN }.toMutableList()
         var index = 0
