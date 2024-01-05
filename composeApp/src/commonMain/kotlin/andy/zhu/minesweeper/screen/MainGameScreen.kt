@@ -174,9 +174,13 @@ fun MainGameScreen(component: MainGameScreenComponent) {
                 }
                 .pointerInput(Unit) {
                     detectTransformGestures { centroid, pan, zoom, _ ->
-                        val targetMatrix = transform.matrix().transformed {
+                        val currentMatrix = transform.matrix()
+                        val scale = limitScale(currentMatrix, zoom)
+                        val targetMatrix = currentMatrix.transformed {
                             translate(pan.x / scaleX(), pan.y / scaleY())
-                            scale(zoom, zoom, centroid.x, centroid.y)
+                            if (scale != 1f) {
+                                scale(scale, scale, centroid.x, centroid.y)
+                            }
                         }
                         transform = CanvasTransform.FixedTransform(targetMatrix)
                     }
@@ -191,13 +195,16 @@ fun MainGameScreen(component: MainGameScreenComponent) {
                 }
                 .onPointerEvent(PointerEventType.Scroll) {
                     val pointerInputChange = it.changes.firstOrNull() ?: return@onPointerEvent
+                    val currentMatrix = transform.matrix()
                     val position = pointerInputChange.position
                     val scrollOffset = pointerInputChange.scrollDelta.y
-                    val scale = if (scrollOffset > 0) 0.8f else 1.25f
-                    val targetMatrix = transform.matrix().transformed {
-                        scale(scale, scale, position.x, position.y)
+                    val scale = limitScale(currentMatrix, if (scrollOffset > 0) 0.8f else 1.25f)
+                    if (scale != 1f) {
+                        val targetMatrix = currentMatrix.transformed {
+                            scale(scale, scale, position.x, position.y)
+                        }
+                        transform = CanvasTransform.AnimatedTransform(targetMatrix)
                     }
-                    transform = CanvasTransform.AnimatedTransform(targetMatrix)
                 }
                 .onGloballyPositioned { coordinates ->
                     val initialTransform = (transform as? CanvasTransform.InitialTransform) ?: return@onGloballyPositioned
@@ -389,4 +396,27 @@ sealed class CanvasTransform {
     data class InitialTransform(val canvasSize: IntSize) : CanvasTransform()
     data class FixedTransform(val matrix: Matrix) : CanvasTransform()
     data class AnimatedTransform(val matrix: Matrix) : CanvasTransform()
+}
+
+private const val MIN_SCALE = 0.3f
+private const val MAX_SCALE = 5f
+
+private fun limitScale(currentMatrix: Matrix, scale: Float): Float {
+    return if (scale < 1) {
+        if (currentMatrix.scaleX() <= MIN_SCALE) {
+            1f
+        } else if (currentMatrix.scaleX() * scale < MIN_SCALE) {
+            MIN_SCALE / currentMatrix.scaleX()
+        } else {
+            scale
+        }
+    } else {
+        if (currentMatrix.scaleX() >= MAX_SCALE) {
+            1f
+        } else if (currentMatrix.scaleX() * scale > MAX_SCALE) {
+            MAX_SCALE / currentMatrix.scaleX()
+        } else {
+            scale
+        }
+    }
 }
