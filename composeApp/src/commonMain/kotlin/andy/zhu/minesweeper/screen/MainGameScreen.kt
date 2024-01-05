@@ -32,8 +32,6 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Matrix
-import androidx.compose.ui.graphics.drawscope.withTransform
-import androidx.compose.ui.graphics.isIdentity
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -45,7 +43,6 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.unit.toSize
 import andy.zhu.minesweeper.GameInstance
 import andy.zhu.minesweeper.LoadMineCanvasPainter
 import andy.zhu.minesweeper.drawMines
@@ -62,30 +59,11 @@ fun MainGameScreen(component: MainGameScreenComponent) {
     val gameInstance by component.gameInstance.collectAsState()
     val mapUI by gameInstance.mapUIFlow.collectAsState()
     val textMeasure = rememberTextMeasurer()
-    var matrix by remember { mutableStateOf(Matrix()) }
-    var animateTargetMatrix by remember { mutableStateOf(Matrix()) }
-    val animatableMatrix = remember {
-        Animatable(Matrix(), MatrixConverter)
-    }
-    var canvasSize = remember { IntSize.Zero }
-
-    LaunchedEffect(matrix, animateTargetMatrix) {
-        if (matrix == animateTargetMatrix) {
-            animatableMatrix.animateTo(animateTargetMatrix, animationSpec = tween(200))
-        } else {
-            animatableMatrix.snapTo(matrix)
-        }
-    }
+    var transform by remember { mutableStateOf<CanvasTransform>(CanvasTransform.InitialTransform(IntSize.Zero)) }
+    val canvasMatrix = remember { Animatable(Matrix(), MatrixConverter) }
 
     val mineSizePx = with(LocalDensity.current) {
         MineDrawConfig.mineSize.toSize()
-    }
-
-    fun calcMinePosition(pointerOffset: Offset): IntOffset {
-        val (x, y) = animatableMatrix.value.inverted().map(pointerOffset)
-        val xPos = (x / mineSizePx.width).toInt()
-        val yPos = (y / mineSizePx.height).toInt()
-        return IntOffset(xPos, yPos)
     }
 
     val canvasPaddings = with(LocalDensity.current) {
@@ -96,6 +74,43 @@ fun MainGameScreen(component: MainGameScreenComponent) {
             defaultPadding,
             WindowInsets.navigationBars.getBottom(this) + defaultPadding
         )
+    }
+
+    fun CanvasTransform.matrix(): Matrix = when(this) {
+        is CanvasTransform.InitialTransform -> {
+            val contentInner = Rect(
+                canvasPaddings[0], canvasPaddings[1],
+                canvasSize.width - canvasPaddings[2],
+                canvasSize.height - canvasPaddings[3]
+            )
+            calcInitMatrix(
+                mineSizePx, component.level.width, component.level.height,
+                contentInner
+            )
+        }
+        is CanvasTransform.FixedTransform -> matrix
+        is CanvasTransform.AnimatedTransform -> matrix
+    }
+
+    LaunchedEffect(transform) {
+        when(transform) {
+            is CanvasTransform.InitialTransform -> {
+                canvasMatrix.snapTo(transform.matrix())
+            }
+            is CanvasTransform.FixedTransform -> {
+                canvasMatrix.snapTo(transform.matrix())
+            }
+            is CanvasTransform.AnimatedTransform -> {
+                canvasMatrix.animateTo(transform.matrix(), animationSpec = tween(200))
+            }
+        }
+    }
+
+    fun calcMinePosition(pointerOffset: Offset): IntOffset {
+        val (x, y) = canvasMatrix.value.inverted().map(pointerOffset)
+        val xPos = (x / mineSizePx.width).toInt()
+        val yPos = (y / mineSizePx.height).toInt()
+        return IntOffset(xPos, yPos)
     }
 
     Scaffold(
@@ -145,10 +160,11 @@ fun MainGameScreen(component: MainGameScreenComponent) {
                 }
                 .pointerInput(Unit) {
                     detectTransformGestures { centroid, pan, zoom, _ ->
-                        matrix = matrix.transformed {
+                        val targetMatrix = transform.matrix().transformed {
                             translate(pan.x / scaleX(), pan.y / scaleY())
                             scale(zoom, zoom, centroid.x, centroid.y)
                         }
+                        transform = CanvasTransform.FixedTransform(targetMatrix)
                     }
                 }
                 .mousePointerMatcher(MousePointerButton.Secondary) {
@@ -164,27 +180,19 @@ fun MainGameScreen(component: MainGameScreenComponent) {
                     val position = pointerInputChange.position
                     val scrollOffset = pointerInputChange.scrollDelta.y
                     val scale = if (scrollOffset > 0) 0.8f else 1.25f
-                    matrix = matrix.transformed {
+                    val targetMatrix = transform.matrix().transformed {
                         scale(scale, scale, position.x, position.y)
                     }
-                    animateTargetMatrix = matrix
+                    transform = CanvasTransform.AnimatedTransform(targetMatrix)
                 }
                 .onGloballyPositioned { coordinates ->
-                    canvasSize = coordinates.size
-                    if (matrix.isIdentity()) {
-                        val contentInner = Rect(
-                            canvasPaddings[0], canvasPaddings[1],
-                            canvasSize.width - canvasPaddings[2],
-                            canvasSize.height - canvasPaddings[3]
-                        )
-                        matrix = calcInitMatrix(
-                            mineSizePx, component.level.width, component.level.height,
-                            contentInner
-                        )
+                    val initialTransform = (transform as? CanvasTransform.InitialTransform) ?: return@onGloballyPositioned
+                    if (coordinates.size != initialTransform.canvasSize) {
+                        transform = CanvasTransform.InitialTransform(coordinates.size)
                     }
                 }
         ) {
-            drawMines(animatableMatrix.value, mapUI, textMeasure, MineDrawConfig, mineCanvasPainters)
+            drawMines(canvasMatrix.value, mapUI, textMeasure, MineDrawConfig, mineCanvasPainters)
         }
     }
 
@@ -368,4 +376,10 @@ object MatrixConverter : TwoWayConverter<Matrix, AnimationVector4D> {
             matrix.values[Matrix.ScaleX], matrix.values[Matrix.ScaleY]
         )
     }
+}
+
+sealed class CanvasTransform {
+    data class InitialTransform(val canvasSize: IntSize) : CanvasTransform()
+    data class FixedTransform(val matrix: Matrix) : CanvasTransform()
+    data class AnimatedTransform(val matrix: Matrix) : CanvasTransform()
 }
