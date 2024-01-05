@@ -1,6 +1,6 @@
 package andy.zhu.minesweeper
 
-import androidx.compose.runtime.Composable
+import androidx.compose.material3.ColorScheme
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
@@ -15,52 +15,51 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.text.TextMeasurer
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import andy.zhu.minesweeper.extensions.inverted
-import andy.zhu.minesweeper.screen.MineDrawConfig
-import org.jetbrains.compose.resources.ExperimentalResourceApi
-import org.jetbrains.compose.resources.painterResource
 
 
 internal fun DrawScope.drawMines(
     transform: Matrix,
     map: GameInstance.MineMapUI,
-    textMeasurer: TextMeasurer,
     drawConfig: MineDrawConfig,
-    mineCanvasPainters: MineCanvasPainters,
 ) {
     val invertedMatrix = transform.inverted()
     val canvasRect = Rect(Offset.Zero, size)
     val viewPort = invertedMatrix.map(canvasRect)
-    val mineWidth = drawConfig.mineSize.width.toPx()
-    val mineHeight = drawConfig.mineSize.height.toPx()
+    val mineWidth = drawConfig.mineSize.toPx()
+    val mineHeight = drawConfig.mineSize.toPx()
     val mineLeft = (viewPort.left / mineWidth).toInt()
     val mineTop = (viewPort.top / mineHeight).toInt()
     val mineRight = (viewPort.right / mineWidth).toInt()
     val mineBottom = (viewPort.bottom / mineHeight).toInt()
+
     map.enumeratedItems
         .filter { (y, x, item) ->
             x in mineLeft..mineRight && y in mineTop..mineBottom
         }
         .forEach { (y, x, item) ->
-            drawMineWithVector(transform, item, textMeasurer, drawConfig,Offset(x * mineWidth, y * mineHeight), mineCanvasPainters)
+            when(drawConfig) {
+                is MineDrawConfig.Font -> drawMineWithFont(transform, item, Offset(x * mineWidth, y * mineHeight), drawConfig)
+                is MineDrawConfig.Image -> drawMineWithImage(transform, item, Offset(x * mineWidth, y * mineHeight), drawConfig)
+            }
         }
 }
 
-private fun DrawScope.drawMine(
+private fun DrawScope.drawMineWithFont(
     transform: Matrix,
     item: GameInstance.MineItemUI,
-    textMeasurer: TextMeasurer,
-    drawConfig: MineDrawConfig,
     offset: Offset,
-    mineCanvasPainters: MineCanvasPainters,
+    drawConfig: MineDrawConfig.Font,
 ) {
     withTransform(
         transformBlock = { transform(transform) }
     ) {
-        val paddingOffset = offset + Offset(drawConfig.minePadding.toPx(), drawConfig.minePadding.toPx())
-        val outerSize = drawConfig.mineSize.toSize()
-        val innerSize = drawConfig.borderSize.toSize()
+        val paddingOffset = offset + Offset(drawConfig.padding.toPx(), drawConfig.padding.toPx())
+        val outerSize = Size(drawConfig.mineSize.toPx(), drawConfig.mineSize.toPx())
+        val innerSize = Size(drawConfig.borderRectSize.toPx(), drawConfig.borderRectSize.toPx())
         if (item != GameInstance.MineItemUI.Hidden) {
             drawRoundRect(
                 Color.Gray, paddingOffset, innerSize,
@@ -69,28 +68,28 @@ private fun DrawScope.drawMine(
         }
         when (item) {
             GameInstance.MineItemUI.Hidden -> {
-                drawRoundRect(drawConfig.hiddenItemColor, paddingOffset, innerSize, CornerRadius(drawConfig.mineCorner.toPx()))
+                drawRoundRect(drawConfig.colors.hiddenFill, paddingOffset, innerSize, CornerRadius(drawConfig.mineCorner.toPx()))
             }
 
             GameInstance.MineItemUI.Flagged -> {
-                drawTextAtCenter(textMeasurer, "🚩", outerSize, drawConfig.itemTextStyle, offset)
+                drawTextAtCenter(drawConfig.textMeasurer, "🚩", outerSize, drawConfig.textStyle, offset)
             }
 
             GameInstance.MineItemUI.Uncertain -> {
-                drawTextAtCenter(textMeasurer, "❓", outerSize, drawConfig.itemTextStyle, offset)
+                drawTextAtCenter(drawConfig.textMeasurer, "❓", outerSize, drawConfig.textStyle, offset)
             }
 
             GameInstance.MineItemUI.OpenedBoom -> {
-                drawTextAtCenter(textMeasurer, "💥", outerSize, drawConfig.itemTextStyle, offset)
+                drawTextAtCenter(drawConfig.textMeasurer, "💥", outerSize, drawConfig.textStyle, offset)
             }
 
             GameInstance.MineItemUI.MineView -> {
-                drawTextAtCenter(textMeasurer, "💣", outerSize, drawConfig.itemTextStyle, offset)
+                drawTextAtCenter(drawConfig.textMeasurer, "💣", outerSize, drawConfig.textStyle, offset)
             }
 
             is GameInstance.MineItemUI.Opened -> {
                 if (item.num != 0) {
-                    drawTextAtCenter(textMeasurer, item.num.toString(), outerSize, drawConfig.itemTextStyle, offset)
+                    drawTextAtCenter(drawConfig.textMeasurer, item.num.toString(), outerSize, drawConfig.textStyle, offset)
                 }
             }
         }
@@ -118,47 +117,45 @@ private fun DrawScope.drawTextAtCenter(
     )
 }
 
-private fun DrawScope.drawMineWithVector(
+private fun DrawScope.drawMineWithImage(
     transform: Matrix,
     item: GameInstance.MineItemUI,
-    textMeasurer: TextMeasurer,
-    drawConfig: MineDrawConfig,
     offset: Offset,
-    mineCanvasPainters: MineCanvasPainters,
+    drawConfig: MineDrawConfig.Image,
 ) {
-    val paddingOffset = offset + Offset(drawConfig.minePadding.toPx(), drawConfig.minePadding.toPx())
+    val paddingOffset = offset + Offset(drawConfig.padding.toPx(), drawConfig.padding.toPx())
 
     withTransform(
         transformBlock = { transform(transform) }
     ) {
-        val innerSize = drawConfig.borderSize.toSize()
+        val innerSize = Size(drawConfig.borderRectSize.toPx(), drawConfig.borderRectSize.toPx())
         if (item != GameInstance.MineItemUI.Hidden) {
             drawRoundRect(
                 Color.Gray, paddingOffset, innerSize,
                 CornerRadius(drawConfig.mineCorner.toPx()), Stroke(1.dp.toPx())
             )
         } else {
-            drawRoundRect(drawConfig.hiddenItemColor, paddingOffset, innerSize, CornerRadius(drawConfig.mineCorner.toPx()))
+            drawRoundRect(drawConfig.colors.hiddenFill, paddingOffset, innerSize, CornerRadius(drawConfig.mineCorner.toPx()))
         }
     }
 
     val vectorOffset = paddingOffset + Offset(drawConfig.innerPadding.toPx(), drawConfig.innerPadding.toPx())
-    val vectorRect = Rect(vectorOffset, drawConfig.vectorSize.toSize())
+    val vectorRect = Rect(vectorOffset, Size(drawConfig.imageSize.toPx(), drawConfig.imageSize.toPx()))
     val mappedRect = transform.map(vectorRect)
     when (item) {
         GameInstance.MineItemUI.Hidden -> Unit
 
-        GameInstance.MineItemUI.Flagged -> drawVector(mineCanvasPainters.flag, mappedRect)
+        GameInstance.MineItemUI.Flagged -> drawVector(drawConfig.flagImage, mappedRect)
 
-        GameInstance.MineItemUI.Uncertain -> drawVector(mineCanvasPainters.questionMark, mappedRect)
+        GameInstance.MineItemUI.Uncertain -> drawVector(drawConfig.questionMark, mappedRect)
 
-        GameInstance.MineItemUI.OpenedBoom -> drawVector(mineCanvasPainters.mine, mappedRect)
+        GameInstance.MineItemUI.OpenedBoom -> drawVector(drawConfig.mineImage, mappedRect)
 
-        GameInstance.MineItemUI.MineView -> drawVector(mineCanvasPainters.mine, mappedRect)
+        GameInstance.MineItemUI.MineView -> drawVector(drawConfig.mineImage, mappedRect)
 
         is GameInstance.MineItemUI.Opened -> {
             if (item.num != 0) {
-                drawVector(mineCanvasPainters.numbers[item.num], mappedRect)
+                drawVector(drawConfig.numberImages[item.num], mappedRect)
             }
         }
     }
@@ -172,18 +169,58 @@ private fun DrawScope.drawVector(painter: Painter, rect: Rect) {
     }
 }
 
-@OptIn(ExperimentalResourceApi::class)
-@Composable
-fun LoadMineCanvasPainter() = MineCanvasPainters(
-    (0 until 10).map { painterResource("numeric_$it.png") },
-    painterResource("mine.png"),
-    painterResource("flag.png"),
-    painterResource("question_mark.png"),
-)
+data class MineCanvasColor(
+    val background: Color,
+    val hiddenFill: Color,
+    val markedFill: Color,
+    val errorFill: Color,
+    val number: Color,
+    val marker: Color,
+    val mineShow: Color,
+    val error: Color,
+) {
+    companion object {
+        fun fromColorScheme(colorScheme: ColorScheme) = MineCanvasColor(
+            background = colorScheme.background,
+            hiddenFill = colorScheme.primaryContainer,
+            markedFill = colorScheme.secondaryContainer,
+            errorFill = colorScheme.errorContainer,
+            number = colorScheme.onBackground,
+            marker = colorScheme.secondary,
+            mineShow = colorScheme.primary,
+            error = colorScheme.error,
+        )
+    }
+}
 
-class MineCanvasPainters(
-    val numbers: List<Painter>,
-    val mine: Painter,
-    val flag: Painter,
-    val questionMark: Painter,
-)
+sealed class MineDrawConfig(
+    val colors: MineCanvasColor,
+    val mineSize: Dp = 48.dp,
+    val mineCorner: Dp = 3.dp,
+    val padding: Dp = 1.dp,
+    val borderWidth: Dp = 1.dp,
+) {
+    val borderRectSize: Dp = mineSize - padding * 2
+
+    class Font(
+        mineCanvasColor: MineCanvasColor,
+        val textMeasurer: TextMeasurer,
+        val textStyle: TextStyle = TextStyle(fontSize = 32.sp)
+    ) : MineDrawConfig(mineCanvasColor)
+
+    class Image(
+        mineCanvasColor: MineCanvasColor,
+        val numberImages: List<Painter>,
+        val mineImage: Painter,
+        val flagImage: Painter,
+        val questionMark: Painter,
+        val innerPadding: Dp = 4.dp,
+    ) : MineDrawConfig(mineCanvasColor) {
+        val imageSize = borderRectSize - innerPadding * 2
+    }
+
+    companion object {
+        val defaultMineSize = 48.dp
+        val canvasPadding = 8.dp
+    }
+}
