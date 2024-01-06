@@ -65,7 +65,7 @@ private fun DrawScope.drawMineWithFont(
             )
         }
         when (item) {
-            GameInstance.MineItemUI.Hidden -> {
+            GameInstance.MineItemUI.Hidden, GameInstance.MineItemUI.HiddenHover -> {
                 drawRoundRect(drawConfig.colors.hiddenFill, paddingOffset, innerSize, CornerRadius(drawConfig.mineCorner.toPx()))
             }
 
@@ -130,7 +130,11 @@ private fun DrawScope.drawMineWithImage(
         transformBlock = { transform(transform) }
     ) {
         val innerSize = Size(drawConfig.borderRectSize.toPx(), drawConfig.borderRectSize.toPx())
-        if (item != GameInstance.MineItemUI.Hidden) {
+        if (item == GameInstance.MineItemUI.Hidden) {
+            drawRoundRect(drawConfig.colors.hiddenFill, paddingOffset, innerSize, CornerRadius(drawConfig.mineCorner.toPx()))
+        } else if (item == GameInstance.MineItemUI.HiddenHover) {
+            drawRoundRect(drawConfig.colors.hiddenHoverFill, paddingOffset, innerSize, CornerRadius(drawConfig.mineCorner.toPx()))
+        } else {
             if (x + 1 < map.width && map.getItemUI(y, x+1) is GameInstance.MineItemUI.Opened) {
                 val start = Offset(drawConfig.mineSize.toPx(), drawConfig.mineCorner.toPx()) + offset
                 val end = Offset(drawConfig.mineSize.toPx(), drawConfig.mineSize.toPx() - drawConfig.mineCorner.toPx()) + offset
@@ -141,8 +145,6 @@ private fun DrawScope.drawMineWithImage(
                 val end = Offset(drawConfig.mineSize.toPx() - drawConfig.mineCorner.toPx(), drawConfig.mineSize.toPx()) + offset
                 drawLine(drawConfig.colors.hiddenFill, start, end, drawConfig.borderWidth.toPx())
             }
-        } else {
-            drawRoundRect(drawConfig.colors.hiddenFill, paddingOffset, innerSize, CornerRadius(drawConfig.mineCorner.toPx()))
         }
     }
 
@@ -150,7 +152,7 @@ private fun DrawScope.drawMineWithImage(
     val vectorRect = Rect(vectorOffset, Size(drawConfig.imageSize.toPx(), drawConfig.imageSize.toPx()))
     val mappedRect = transform.map(vectorRect)
     when (item) {
-        GameInstance.MineItemUI.Hidden -> Unit
+        GameInstance.MineItemUI.Hidden, GameInstance.MineItemUI.HiddenHover -> Unit
 
         GameInstance.MineItemUI.Flagged -> drawVector(drawConfig.flagImage, mappedRect)
 
@@ -179,6 +181,7 @@ private fun DrawScope.drawVector(painter: Painter, rect: Rect) {
 data class MineCanvasColor(
     val background: Color,
     val hiddenFill: Color,
+    val hiddenHoverFill: Color,
     val markedFill: Color,
     val errorFill: Color,
     val number: Color,
@@ -190,6 +193,7 @@ data class MineCanvasColor(
         fun fromColorScheme(colorScheme: ColorScheme) = MineCanvasColor(
             background = colorScheme.background,
             hiddenFill = colorScheme.primaryContainer,
+            hiddenHoverFill = colorScheme.inversePrimary,
             markedFill = colorScheme.secondaryContainer,
             errorFill = colorScheme.errorContainer,
             number = colorScheme.onBackground,

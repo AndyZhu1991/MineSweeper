@@ -76,9 +76,8 @@ fun MainGameScreen(component: MainGameScreenComponent) {
     var transform by remember { mutableStateOf<CanvasTransform>(CanvasTransform.InitialTransform(IntSize.Zero)) }
     val canvasMatrix = remember { Animatable(Matrix(), MatrixConverter) }
 
-    val mineSizePx = with(LocalDensity.current) {
-        Size(MineDrawConfig.defaultMineSize.toPx(), MineDrawConfig.defaultMineSize.toPx())
-    }
+    val mineDrawConfig = CreateDrawConfig()
+    val density = LocalDensity.current
 
     val canvasPaddings = with(LocalDensity.current) {
         val defaultPadding = MineDrawConfig.canvasPadding.toPx()
@@ -97,10 +96,10 @@ fun MainGameScreen(component: MainGameScreenComponent) {
                 canvasSize.width - canvasPaddings[2],
                 canvasSize.height - canvasPaddings[3]
             )
-            calcInitMatrix(
-                mineSizePx, component.level.width, component.level.height,
-                contentInner
-            )
+            val mineSize = with(density) {
+                Size(mineDrawConfig.mineSize.toPx(), mineDrawConfig.mineSize.toPx())
+            }
+            calcInitMatrix(mineSize, component.level.width, component.level.height, contentInner)
         }
         is CanvasTransform.FixedTransform -> matrix
         is CanvasTransform.AnimatedTransform -> matrix
@@ -120,11 +119,25 @@ fun MainGameScreen(component: MainGameScreenComponent) {
         }
     }
 
-    fun calcMinePosition(pointerOffset: Offset): IntOffset {
+    fun calcMinePosition(pointerOffset: Offset, mustInsideBorder: Boolean = true): IntOffset? {
+        val mineSize = with(density) { mineDrawConfig.mineSize.toPx() }
         val (x, y) = canvasMatrix.value.inverted().map(pointerOffset)
-        val xPos = (x / mineSizePx.width).toInt()
-        val yPos = (y / mineSizePx.height).toInt()
-        return IntOffset(xPos, yPos)
+        val xPos = (x / mineSize).toInt()
+        val yPos = (y / mineSize).toInt()
+        return if (!mustInsideBorder) {
+            IntOffset(xPos, yPos)
+        } else {
+            val minePadding = with(density) { mineDrawConfig.padding.toPx() }
+            val insideBorderRect = Rect(
+                Offset(xPos * mineSize + minePadding, yPos * mineSize + minePadding),
+                Size(mineSize - minePadding * 2, mineSize - minePadding * 2)
+            )
+            if (insideBorderRect.contains(canvasMatrix.value.inverted().map(pointerOffset))) {
+                IntOffset(xPos, yPos)
+            } else {
+                null
+            }
+        }
     }
 
     Scaffold(
@@ -156,19 +169,20 @@ fun MainGameScreen(component: MainGameScreenComponent) {
         },
         floatingActionButton = { MineFab(gameInstance) }
     ) {
-        val mineDrawConfig = CreateDrawConfig()
         Canvas(
             modifier = Modifier
                 .fillMaxSize()
                 .pointerInput(Unit) {
                     detectTapGestures(
                         onLongPress = {
-                            val (x, y) = calcMinePosition(it)
-                            gameInstance.onMineLongTap(gameInstance.Position(x, y))
+                            calcMinePosition(it)?.let {
+                                gameInstance.onMineLongTap(gameInstance.Position(it.x, it.y))
+                            }
                         },
                         onTap = {
-                            val (x, y) = calcMinePosition(it)
-                            gameInstance.onMineTap(gameInstance.Position(x, y))
+                            calcMinePosition(it)?.let {
+                                gameInstance.onMineTap(gameInstance.Position(it.x, it.y))
+                            }
                         }
                     )
                 }
@@ -186,12 +200,14 @@ fun MainGameScreen(component: MainGameScreenComponent) {
                     }
                 }
                 .mousePointerMatcher(MousePointerButton.Secondary) {
-                    val (x, y) = calcMinePosition(it)
-                    gameInstance.onMineRightClick(gameInstance.Position(x, y))
+                    calcMinePosition(it)?.let {
+                        gameInstance.onMineRightClick(gameInstance.Position(it.x, it.y))
+                    }
                 }
                 .mousePointerMatcher(MousePointerButton.Tertiary) {
-                    val (x, y) = calcMinePosition(it)
-                    gameInstance.onMineMiddleClick(gameInstance.Position(x, y))
+                    calcMinePosition(it, mustInsideBorder = false)?.let {
+                        gameInstance.onMineMiddleClick(gameInstance.Position(it.x, it.y))
+                    }
                 }
                 .onPointerEvent(PointerEventType.Scroll) {
                     val pointerInputChange = it.changes.firstOrNull() ?: return@onPointerEvent
@@ -205,6 +221,18 @@ fun MainGameScreen(component: MainGameScreenComponent) {
                         }
                         transform = CanvasTransform.AnimatedTransform(targetMatrix)
                     }
+                }
+                .onPointerEvent(PointerEventType.Move) {
+                    val offset = it.changes.firstOrNull()?.position ?: return@onPointerEvent
+                    val minePosition = calcMinePosition(offset)
+                    if (minePosition != null) {
+                        gameInstance.onMineHover(gameInstance.Position(minePosition.x, minePosition.y))
+                    } else {
+                        gameInstance.onMineHover(null)
+                    }
+                }
+                .onPointerEvent(PointerEventType.Exit) {
+                    gameInstance.onMineHover(null)
                 }
                 .onGloballyPositioned { coordinates ->
                     val initialTransform = (transform as? CanvasTransform.InitialTransform) ?: return@onGloballyPositioned

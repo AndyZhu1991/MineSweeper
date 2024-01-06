@@ -1,6 +1,5 @@
 package andy.zhu.minesweeper
 
-import androidx.compose.ui.geometry.Offset
 import andy.zhu.minesweeper.extensions.combine
 import andy.zhu.minesweeper.extensions.map
 import getPlatform
@@ -19,6 +18,8 @@ class GameInstance(
     private val status = Array(gameConfig.mapSize()) { GridStatus.HIDDEN }
     private val _mapUIFlow: MutableStateFlow<MineMapUI> = MutableStateFlow(buildMapUI())
     val mapUIFlow: StateFlow<MineMapUI> = _mapUIFlow
+
+    private var hoverPosition: Position? = null
 
     private var timerJob: Job? = null
     private val timeSeconds = MutableStateFlow<Int>(0)
@@ -118,6 +119,14 @@ class GameInstance(
         tryOpenNeighbours(position)
     }
 
+    fun onMineHover(ppos: Position?) {
+        val position = if (ppos?.isValid() == false) null else ppos
+        if (this.hoverPosition != position) {
+            this.hoverPosition = position
+            updateMapUI()
+        }
+    }
+
     fun switchTapAction() {
         _flagWhenTap.value = !_flagWhenTap.value
     }
@@ -166,7 +175,13 @@ class GameInstance(
     private fun buildMapUI(): MineMapUI {
         val mineUIItems: List<MineItemUI> = MutableList(gameConfig.mapSize()) { index ->
             when(status[index]) {
-                GridStatus.HIDDEN -> MineItemUI.Hidden
+                GridStatus.HIDDEN -> {
+                    if (hoverPosition?.flattenedIndex() == index) {
+                        MineItemUI.HiddenHover
+                    } else {
+                        MineItemUI.Hidden
+                    }
+                }
                 GridStatus.FLAGGED -> MineItemUI.Flagged
                 GridStatus.UNCERTAIN -> MineItemUI.Uncertain
                 GridStatus.OPENED -> {
@@ -288,6 +303,7 @@ class GameInstance(
     
     sealed class MineItemUI {
         object Hidden: MineItemUI()
+        object HiddenHover: MineItemUI()
         object Flagged: MineItemUI()
         object Uncertain: MineItemUI()
         object OpenedBoom: MineItemUI()
@@ -314,6 +330,15 @@ class GameInstance(
 
         fun flattenedIndex(): Int {
             return y * gameConfig.width + x
+        }
+
+        override fun equals(other: Any?): Boolean {
+            if (other !is Position) return false
+            return this.x == other.x && this.y == other.y
+        }
+
+        override fun hashCode(): Int {
+            return flattenedIndex()
         }
     }
 
