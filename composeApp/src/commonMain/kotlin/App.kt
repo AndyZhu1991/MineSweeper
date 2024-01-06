@@ -1,4 +1,6 @@
-import androidx.compose.material.MaterialTheme
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import andy.zhu.minesweeper.navigation.RootComponent
@@ -8,12 +10,12 @@ import com.arkivanov.decompose.extensions.compose.stack.Children
 import com.arkivanov.decompose.extensions.compose.stack.animation.slide
 import com.arkivanov.decompose.extensions.compose.stack.animation.stackAnimation
 import com.arkivanov.decompose.extensions.compose.subscribeAsState
-import org.jetbrains.compose.resources.ExperimentalResourceApi
 
-@OptIn(ExperimentalResourceApi::class)
 @Composable
 fun App(root: RootComponent) {
-    MaterialTheme {
+    MaterialTheme(
+        colorScheme = lightColorScheme()
+    ) {
         val childStack by root.childStack.subscribeAsState()
         Children(
             stack = childStack,

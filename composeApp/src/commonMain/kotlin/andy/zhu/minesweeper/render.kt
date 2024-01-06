@@ -6,6 +6,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -35,6 +36,8 @@ internal fun DrawScope.drawMines(
     val mineTop = kotlin.math.max((viewPort.top / mineHeight).toInt(), 0)
     val mineRight = kotlin.math.min((viewPort.right / mineWidth).toInt(), map.width - 1)
     val mineBottom = kotlin.math.min((viewPort.bottom / mineHeight).toInt(), map.height - 1)
+
+    drawItemBorderAndBg(transform, map, drawConfig, mineLeft, mineTop, mineRight, mineBottom)
 
     for (y in mineTop..mineBottom) {
         for (x in mineLeft..mineRight) {
@@ -115,6 +118,46 @@ private fun DrawScope.drawTextAtCenter(
     )
 }
 
+private fun DrawScope.drawItemBorderAndBg(
+    transform: Matrix, map: GameInstance.MineMapUI, drawConfig: MineDrawConfig,
+    left: Int, top: Int, right: Int, bottom: Int,
+) {
+    withTransform(
+        transformBlock = { transform(transform) }
+    ) {
+        val innerSize = Size(drawConfig.borderRectSize.toPx(), drawConfig.borderRectSize.toPx())
+        val fillCorner = CornerRadius(drawConfig.mineCorner.toPx())
+        for (y in top..bottom) { for (x in left..right) {
+            val offset = Offset(x * drawConfig.mineSize.toPx(), y * drawConfig.mineSize.toPx())
+            val paddingOffset = offset + Offset(drawConfig.padding.toPx(), drawConfig.padding.toPx())
+            when(map.getItemUI(y, x)) {
+                GameInstance.MineItemUI.Hidden -> drawConfig.colors.hiddenFill
+                GameInstance.MineItemUI.HiddenHover -> drawConfig.colors.hiddenHoverFill
+                GameInstance.MineItemUI.Flagged -> drawConfig.colors.markedFill
+                GameInstance.MineItemUI.Uncertain -> drawConfig.colors.markedFill
+                GameInstance.MineItemUI.MineView -> drawConfig.colors.markedFill
+                GameInstance.MineItemUI.OpenedBoom -> drawConfig.colors.errorFill
+                is GameInstance.MineItemUI.Opened -> null
+            }?.let { fillColor ->
+                drawRoundRect(fillColor, paddingOffset, innerSize, fillCorner)
+            }
+
+            if (x + 1 < map.width && map.getItemUI(y, x) is GameInstance.MineItemUI.Opened
+                    && map.getItemUI(y, x+1) is GameInstance.MineItemUI.Opened) {
+                val start = Offset(drawConfig.mineSize.toPx(), drawConfig.mineCorner.toPx()) + offset
+                val end = Offset(drawConfig.mineSize.toPx(), drawConfig.mineSize.toPx() - drawConfig.mineCorner.toPx()) + offset
+                drawLine(drawConfig.colors.hiddenFill, start, end, drawConfig.borderWidth.toPx())
+            }
+            if (y + 1 < map.height && map.getItemUI(y, x) is GameInstance.MineItemUI.Opened
+                    && map.getItemUI(y+1, x) is GameInstance.MineItemUI.Opened) {
+                val start = Offset(drawConfig.mineCorner.toPx(), drawConfig.mineSize.toPx()) + offset
+                val end = Offset(drawConfig.mineSize.toPx() - drawConfig.mineCorner.toPx(), drawConfig.mineSize.toPx()) + offset
+                drawLine(drawConfig.colors.hiddenFill, start, end, drawConfig.borderWidth.toPx())
+            }
+        } }
+    }
+}
+
 private fun DrawScope.drawMineWithImage(
     transform: Matrix,
     map: GameInstance.MineMapUI,
@@ -126,54 +169,28 @@ private fun DrawScope.drawMineWithImage(
     val paddingOffset = offset + Offset(drawConfig.padding.toPx(), drawConfig.padding.toPx())
     val item = map.getItemUI(y, x)
 
-    withTransform(
-        transformBlock = { transform(transform) }
-    ) {
-        val innerSize = Size(drawConfig.borderRectSize.toPx(), drawConfig.borderRectSize.toPx())
-        if (item == GameInstance.MineItemUI.Hidden) {
-            drawRoundRect(drawConfig.colors.hiddenFill, paddingOffset, innerSize, CornerRadius(drawConfig.mineCorner.toPx()))
-        } else if (item == GameInstance.MineItemUI.HiddenHover) {
-            drawRoundRect(drawConfig.colors.hiddenHoverFill, paddingOffset, innerSize, CornerRadius(drawConfig.mineCorner.toPx()))
-        } else {
-            if (x + 1 < map.width && map.getItemUI(y, x+1) is GameInstance.MineItemUI.Opened) {
-                val start = Offset(drawConfig.mineSize.toPx(), drawConfig.mineCorner.toPx()) + offset
-                val end = Offset(drawConfig.mineSize.toPx(), drawConfig.mineSize.toPx() - drawConfig.mineCorner.toPx()) + offset
-                drawLine(drawConfig.colors.hiddenFill, start, end, drawConfig.borderWidth.toPx())
-            }
-            if (y + 1 < map.height && map.getItemUI(y+1, x) is GameInstance.MineItemUI.Opened) {
-                val start = Offset(drawConfig.mineCorner.toPx(), drawConfig.mineSize.toPx()) + offset
-                val end = Offset(drawConfig.mineSize.toPx() - drawConfig.mineCorner.toPx(), drawConfig.mineSize.toPx()) + offset
-                drawLine(drawConfig.colors.hiddenFill, start, end, drawConfig.borderWidth.toPx())
-            }
-        }
-    }
-
     val vectorOffset = paddingOffset + Offset(drawConfig.innerPadding.toPx(), drawConfig.innerPadding.toPx())
     val vectorRect = Rect(vectorOffset, Size(drawConfig.imageSize.toPx(), drawConfig.imageSize.toPx()))
     val mappedRect = transform.map(vectorRect)
+
     when (item) {
-        GameInstance.MineItemUI.Hidden, GameInstance.MineItemUI.HiddenHover -> Unit
-
-        GameInstance.MineItemUI.Flagged -> drawVector(drawConfig.flagImage, mappedRect)
-
-        GameInstance.MineItemUI.Uncertain -> drawVector(drawConfig.questionMark, mappedRect)
-
-        GameInstance.MineItemUI.OpenedBoom -> drawVector(drawConfig.mineImage, mappedRect)
-
-        GameInstance.MineItemUI.MineView -> drawVector(drawConfig.mineImage, mappedRect)
-
+        GameInstance.MineItemUI.Hidden, GameInstance.MineItemUI.HiddenHover -> null
+        GameInstance.MineItemUI.Flagged -> drawConfig.flagImage to drawConfig.colors.marker
+        GameInstance.MineItemUI.Uncertain -> drawConfig.questionMark to drawConfig.colors.marker
+        GameInstance.MineItemUI.OpenedBoom -> drawConfig.mineImage to drawConfig.colors.error
+        GameInstance.MineItemUI.MineView -> drawConfig.mineImage to drawConfig.colors.mineShow
         is GameInstance.MineItemUI.Opened -> {
             if (item.num != 0) {
-                drawVector(drawConfig.numberImages[item.num], mappedRect)
+                drawConfig.numberImages[item.num] to drawConfig.colors.number
+            } else {
+                null
             }
         }
-    }
-}
-
-private fun DrawScope.drawVector(painter: Painter, rect: Rect) {
-    translate(rect.left, rect.top) {
-        with(painter) {
-            draw(rect.size)
+    }?.let { (image, color) ->
+        translate(mappedRect.left, mappedRect.top) {
+            with(image) {
+                draw(mappedRect.size, colorFilter = ColorFilter.tint(color))
+            }
         }
     }
 }
@@ -194,7 +211,7 @@ data class MineCanvasColor(
             background = colorScheme.background,
             hiddenFill = colorScheme.primaryContainer,
             hiddenHoverFill = colorScheme.inversePrimary,
-            markedFill = colorScheme.secondaryContainer,
+            markedFill = colorScheme.primaryContainer.copy(alpha = 0.5f),
             errorFill = colorScheme.errorContainer,
             number = colorScheme.onBackground,
             marker = colorScheme.secondary,

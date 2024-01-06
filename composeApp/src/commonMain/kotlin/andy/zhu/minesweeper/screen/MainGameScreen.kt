@@ -143,15 +143,14 @@ fun MainGameScreen(component: MainGameScreenComponent) {
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.9f),
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f),
                 ),
                 title = { Title(gameInstance) },
                 navigationIcon = {
                     IconButton(onClick = component.onClose) {
                         Icon(
                             imageVector = Icons.Filled.ArrowBack,
-                            tint = MaterialTheme.colorScheme.onPrimary,
                             contentDescription = "Localized description"
                         )
                     }
@@ -160,7 +159,6 @@ fun MainGameScreen(component: MainGameScreenComponent) {
                     IconButton(onClick = component::onRefresh) {
                         Icon(
                             imageVector = Icons.Filled.Refresh,
-                            tint = MaterialTheme.colorScheme.onPrimary,
                             contentDescription = "Localized description"
                         )
                     }
@@ -293,12 +291,10 @@ private fun Title(gameInstance: GameInstance) {
                 painter = painterResource("clock.xml"),
                 contentDescription = null,
                 modifier = Modifier.size(32.dp),
-                tint = MaterialTheme.colorScheme.onPrimary,
             )
             Text(
                 timeString,
                 modifier = Modifier.padding(start = 4.dp),
-                color = MaterialTheme.colorScheme.onPrimary,
                 style = MaterialTheme.typography.headlineMedium,
             )
         }
@@ -310,12 +306,10 @@ private fun Title(gameInstance: GameInstance) {
                 painter = painterResource("mine.xml"),
                 contentDescription = null,
                 modifier = Modifier.size(32.dp),
-                tint = MaterialTheme.colorScheme.onPrimary,
             )
             Text(
                 minesRemaining,
                 modifier = Modifier.padding(start = 4.dp),
-                color = MaterialTheme.colorScheme.onPrimary,
                 style = MaterialTheme.typography.headlineMedium,
             )
         }

@@ -3,52 +3,62 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
-/**
- * Preview all colors in MaterialTheme.colorScheme.
- */
+
 @Preview
 @Composable
-fun PreviewColors() {
+fun PreviewLightColors() {
+    PreviewColors(lightColorScheme())
+}
+
+@Preview
+@Composable
+fun PreviewDarkColors() {
+    PreviewColors(darkColorScheme())
+}
+
+@Composable
+fun PreviewColors(colorScheme: ColorScheme) {
     Column {
-        PreviewColor("primary", MaterialTheme.colorScheme.primary)
-        PreviewColor("onPrimary", MaterialTheme.colorScheme.onPrimary)
-        PreviewColor("primaryContainer", MaterialTheme.colorScheme.primaryContainer)
-        PreviewColor("onPrimaryContainer", MaterialTheme.colorScheme.onPrimaryContainer)
-        PreviewColor("inversePrimary", MaterialTheme.colorScheme.inversePrimary)
-        PreviewColor("secondary", MaterialTheme.colorScheme.secondary)
-        PreviewColor("onSecondary", MaterialTheme.colorScheme.onSecondary)
-        PreviewColor("secondaryContainer", MaterialTheme.colorScheme.secondaryContainer)
-        PreviewColor("onSecondaryContainer", MaterialTheme.colorScheme.onSecondaryContainer)
-        PreviewColor("tertiary", MaterialTheme.colorScheme.tertiary)
-        PreviewColor("onTertiary", MaterialTheme.colorScheme.onTertiary)
-        PreviewColor("tertiaryContainer", MaterialTheme.colorScheme.tertiaryContainer)
-        PreviewColor("onTertiaryContainer", MaterialTheme.colorScheme.onTertiaryContainer)
-        PreviewColor("background", MaterialTheme.colorScheme.background)
-        PreviewColor("onBackground", MaterialTheme.colorScheme.onBackground)
-        PreviewColor("surface", MaterialTheme.colorScheme.surface)
-        PreviewColor("onSurface", MaterialTheme.colorScheme.onSurface)
-        PreviewColor("surfaceVariant", MaterialTheme.colorScheme.surfaceVariant)
-        PreviewColor("onSurfaceVariant", MaterialTheme.colorScheme.onSurfaceVariant)
-        PreviewColor("surfaceTint", MaterialTheme.colorScheme.surfaceTint)
-        PreviewColor("inverseSurface", MaterialTheme.colorScheme.inverseSurface)
-        PreviewColor("inverseOnSurface", MaterialTheme.colorScheme.inverseOnSurface)
-        PreviewColor("error", MaterialTheme.colorScheme.error)
-        PreviewColor("onError", MaterialTheme.colorScheme.onError)
-        PreviewColor("errorContainer", MaterialTheme.colorScheme.errorContainer)
-        PreviewColor("onErrorContainer", MaterialTheme.colorScheme.onErrorContainer)
-        PreviewColor("outline", MaterialTheme.colorScheme.outline)
-        PreviewColor("outlineVariant", MaterialTheme.colorScheme.outlineVariant)
-        PreviewColor("scrim", MaterialTheme.colorScheme.scrim)
+        PreviewColor("primary", colorScheme.primary)
+        PreviewColor("onPrimary", colorScheme.onPrimary)
+        PreviewColor("primaryContainer", colorScheme.primaryContainer)
+        PreviewColor("onPrimaryContainer", colorScheme.onPrimaryContainer)
+        PreviewColor("inversePrimary", colorScheme.inversePrimary)
+        PreviewColor("secondary", colorScheme.secondary)
+        PreviewColor("onSecondary", colorScheme.onSecondary)
+        PreviewColor("secondaryContainer", colorScheme.secondaryContainer)
+        PreviewColor("onSecondaryContainer", colorScheme.onSecondaryContainer)
+        PreviewColor("tertiary", colorScheme.tertiary)
+        PreviewColor("onTertiary", colorScheme.onTertiary)
+        PreviewColor("tertiaryContainer", colorScheme.tertiaryContainer)
+        PreviewColor("onTertiaryContainer", colorScheme.onTertiaryContainer)
+        PreviewColor("background", colorScheme.background)
+        PreviewColor("onBackground", colorScheme.onBackground)
+        PreviewColor("surface", colorScheme.surface)
+        PreviewColor("onSurface", colorScheme.onSurface)
+        PreviewColor("surfaceVariant", colorScheme.surfaceVariant)
+        PreviewColor("onSurfaceVariant", colorScheme.onSurfaceVariant)
+        PreviewColor("surfaceTint", colorScheme.surfaceTint)
+        PreviewColor("inverseSurface", colorScheme.inverseSurface)
+        PreviewColor("inverseOnSurface", colorScheme.inverseOnSurface)
+        PreviewColor("error", colorScheme.error)
+        PreviewColor("onError", colorScheme.onError)
+        PreviewColor("errorContainer", colorScheme.errorContainer)
+        PreviewColor("onErrorContainer", colorScheme.onErrorContainer)
+        PreviewColor("outline", colorScheme.outline)
+        PreviewColor("outlineVariant", colorScheme.outlineVariant)
+        PreviewColor("scrim", colorScheme.scrim)
     }
 }
 
