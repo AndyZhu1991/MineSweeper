@@ -31,21 +31,19 @@ internal fun DrawScope.drawMines(
     val viewPort = invertedMatrix.map(canvasRect)
     val mineWidth = drawConfig.mineSize.toPx()
     val mineHeight = drawConfig.mineSize.toPx()
-    val mineLeft = (viewPort.left / mineWidth).toInt()
-    val mineTop = (viewPort.top / mineHeight).toInt()
-    val mineRight = (viewPort.right / mineWidth).toInt()
-    val mineBottom = (viewPort.bottom / mineHeight).toInt()
+    val mineLeft = kotlin.math.max((viewPort.left / mineWidth).toInt(), 0)
+    val mineTop = kotlin.math.max((viewPort.top / mineHeight).toInt(), 0)
+    val mineRight = kotlin.math.min((viewPort.right / mineWidth).toInt(), map.width - 1)
+    val mineBottom = kotlin.math.min((viewPort.bottom / mineHeight).toInt(), map.height - 1)
 
-    map.enumeratedItems
-        .filter { (y, x, item) ->
-            x in mineLeft..mineRight && y in mineTop..mineBottom
-        }
-        .forEach { (y, x, item) ->
+    for (y in mineTop..mineBottom) {
+        for (x in mineLeft..mineRight) {
             when(drawConfig) {
-                is MineDrawConfig.Font -> drawMineWithFont(transform, item, Offset(x * mineWidth, y * mineHeight), drawConfig)
-                is MineDrawConfig.Image -> drawMineWithImage(transform, item, Offset(x * mineWidth, y * mineHeight), drawConfig)
+                is MineDrawConfig.Font -> drawMineWithFont(transform, map.getItemUI(y, x), Offset(x * mineWidth, y * mineHeight), drawConfig)
+                is MineDrawConfig.Image -> drawMineWithImage(transform, map, y, x, drawConfig)
             }
         }
+    }
 }
 
 private fun DrawScope.drawMineWithFont(
@@ -119,21 +117,30 @@ private fun DrawScope.drawTextAtCenter(
 
 private fun DrawScope.drawMineWithImage(
     transform: Matrix,
-    item: GameInstance.MineItemUI,
-    offset: Offset,
+    map: GameInstance.MineMapUI,
+    y: Int,
+    x: Int,
     drawConfig: MineDrawConfig.Image,
 ) {
+    val offset = Offset(x * drawConfig.mineSize.toPx(), y * drawConfig.mineSize.toPx())
     val paddingOffset = offset + Offset(drawConfig.padding.toPx(), drawConfig.padding.toPx())
+    val item = map.getItemUI(y, x)
 
     withTransform(
         transformBlock = { transform(transform) }
     ) {
         val innerSize = Size(drawConfig.borderRectSize.toPx(), drawConfig.borderRectSize.toPx())
         if (item != GameInstance.MineItemUI.Hidden) {
-            drawRoundRect(
-                Color.Gray, paddingOffset, innerSize,
-                CornerRadius(drawConfig.mineCorner.toPx()), Stroke(1.dp.toPx())
-            )
+            if (x + 1 < map.width && map.getItemUI(y, x+1) is GameInstance.MineItemUI.Opened) {
+                val start = Offset(drawConfig.mineSize.toPx(), drawConfig.mineCorner.toPx()) + offset
+                val end = Offset(drawConfig.mineSize.toPx(), drawConfig.mineSize.toPx() - drawConfig.mineCorner.toPx()) + offset
+                drawLine(drawConfig.colors.hiddenFill, start, end, drawConfig.borderWidth.toPx())
+            }
+            if (y + 1 < map.height && map.getItemUI(y+1, x) is GameInstance.MineItemUI.Opened) {
+                val start = Offset(drawConfig.mineCorner.toPx(), drawConfig.mineSize.toPx()) + offset
+                val end = Offset(drawConfig.mineSize.toPx() - drawConfig.mineCorner.toPx(), drawConfig.mineSize.toPx()) + offset
+                drawLine(drawConfig.colors.hiddenFill, start, end, drawConfig.borderWidth.toPx())
+            }
         } else {
             drawRoundRect(drawConfig.colors.hiddenFill, paddingOffset, innerSize, CornerRadius(drawConfig.mineCorner.toPx()))
         }

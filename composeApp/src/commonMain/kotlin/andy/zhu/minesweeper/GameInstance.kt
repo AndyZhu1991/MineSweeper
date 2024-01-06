@@ -296,16 +296,14 @@ class GameInstance(
     }
     
     class MineMapUI(
-        items: List<MineItemUI>,
+        val items: List<MineItemUI>,
         gameConfig: GameConfig,
     ) {
         val width = gameConfig.width
         val height = gameConfig.height
 
-        val enumeratedItems: List<Triple<Int, Int, MineItemUI>> = items.mapIndexed { index, item->
-            val y = index / gameConfig.width
-            val x = index % gameConfig.width
-            Triple(y, x, item)
+        fun getItemUI(y: Int, x: Int): MineItemUI {
+            return items[width * y + x]
         }
     }
 
