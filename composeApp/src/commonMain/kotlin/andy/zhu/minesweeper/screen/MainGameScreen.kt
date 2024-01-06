@@ -6,6 +6,7 @@ import MousePointerButton
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.AnimationVector4D
 import androidx.compose.animation.core.TwoWayConverter
+import androidx.compose.animation.core.VectorConverter
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -75,6 +76,20 @@ fun MainGameScreen(component: MainGameScreenComponent) {
     val textMeasure = rememberTextMeasurer()
     var transform by remember { mutableStateOf<CanvasTransform>(CanvasTransform.InitialTransform(IntSize.Zero)) }
     val canvasMatrix = remember { Animatable(Matrix(), MatrixConverter) }
+
+    val canvasAnimationFraction = remember { Animatable(1f, Float.VectorConverter) }
+
+    LaunchedEffect(mapUI) {
+        if (mapUI.hasAnimation) {
+            canvasAnimationFraction.snapTo(0f)
+            canvasAnimationFraction.animateTo(1f, animationSpec = tween(200))
+        } else {
+            if (canvasAnimationFraction.isRunning) {
+                canvasAnimationFraction.stop()
+            }
+            canvasAnimationFraction.snapTo(0f)
+        }
+    }
 
     val mineDrawConfig = CreateDrawConfig()
     val density = LocalDensity.current
@@ -239,7 +254,12 @@ fun MainGameScreen(component: MainGameScreenComponent) {
                     }
                 }
         ) {
-            drawMines(canvasMatrix.value, mapUI, mineDrawConfig)
+            drawMines(
+                canvasMatrix.value,
+                mapUI,
+                canvasAnimationFraction.value,
+                mineDrawConfig
+            )
         }
     }
 

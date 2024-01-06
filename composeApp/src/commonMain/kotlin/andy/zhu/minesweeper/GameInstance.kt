@@ -1,5 +1,6 @@
 package andy.zhu.minesweeper
 
+import androidx.compose.ui.unit.IntOffset
 import andy.zhu.minesweeper.extensions.combine
 import andy.zhu.minesweeper.extensions.map
 import getPlatform
@@ -120,7 +121,11 @@ class GameInstance(
     }
 
     fun onMineHover(ppos: Position?) {
-        val position = if (ppos?.isValid() == false) null else ppos
+        val position = if (ppos == null || !ppos.isValid() || status[ppos] != GridStatus.HIDDEN) {
+            null
+        } else {
+            ppos
+        }
         if (this.hoverPosition != position) {
             this.hoverPosition = position
             updateMapUI()
@@ -172,8 +177,11 @@ class GameInstance(
         return neighbours(position).count { hasMine[it] }
     }
     
-    private fun buildMapUI(): MineMapUI {
+    private fun buildMapUI(animations: List<Pair<MineItemUI.Animation, Position>> = emptyList()): MineMapUI {
         val mineUIItems: List<MineItemUI> = MutableList(gameConfig.mapSize()) { index ->
+            animations.firstOrNull { it.second.flattenedIndex() == index }?.let {
+                return@MutableList it.first
+            }
             when(status[index]) {
                 GridStatus.HIDDEN -> {
                     if (hoverPosition?.flattenedIndex() == index) {
@@ -196,8 +204,8 @@ class GameInstance(
         return MineMapUI(mineUIItems, gameConfig)
     }
     
-    private fun updateMapUI() {
-        _mapUIFlow.value = buildMapUI()
+    private fun updateMapUI(animations: List<Pair<MineItemUI.Animation, Position>> = emptyList()) {
+        _mapUIFlow.value = buildMapUI(animations)
     }
     
     private fun positions(): Sequence<Position> {
@@ -248,8 +256,12 @@ class GameInstance(
             val neighbours = neighbours(position)
             val flagCount = neighbours.count { status[it] == GridStatus.FLAGGED }
             val hiddens = neighbours.filter { status[it] == GridStatus.HIDDEN }
-            if (flagCount == mineCount[position] && hiddens.isNotEmpty()) {
-                openGrids(hiddens)
+            if (hiddens.isNotEmpty()) {
+                if (flagCount == mineCount[position]) {
+                    openGrids(hiddens)
+                } else if (flagCount < mineCount[position]) {
+                    updateMapUI(hiddens.map { MineItemUI.BlinkAnimation to it })
+                }
             }
         }
     }
@@ -309,6 +321,9 @@ class GameInstance(
         object OpenedBoom: MineItemUI()
         object MineView: MineItemUI()
         class Opened(val num: Int): MineItemUI()
+
+        sealed class Animation(val targetUI: MineItemUI): MineItemUI()
+        object BlinkAnimation: Animation(Hidden)
     }
     
     class MineMapUI(
@@ -317,6 +332,8 @@ class GameInstance(
     ) {
         val width = gameConfig.width
         val height = gameConfig.height
+
+        val hasAnimation = items.any { it is MineItemUI.Animation }
 
         fun getItemUI(y: Int, x: Int): MineItemUI {
             return items[width * y + x]
@@ -330,6 +347,10 @@ class GameInstance(
 
         fun flattenedIndex(): Int {
             return y * gameConfig.width + x
+        }
+
+        fun toOffset(): IntOffset {
+            return IntOffset(x, y)
         }
 
         override fun equals(other: Any?): Boolean {

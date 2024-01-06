@@ -20,11 +20,13 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import andy.zhu.minesweeper.extensions.inverted
+import andy.zhu.minesweeper.extensions.transform
 
 
 internal fun DrawScope.drawMines(
     transform: Matrix,
     map: GameInstance.MineMapUI,
+    animationFraction: Float,
     drawConfig: MineDrawConfig,
 ) {
     val invertedMatrix = transform.inverted()
@@ -37,13 +39,13 @@ internal fun DrawScope.drawMines(
     val mineRight = kotlin.math.min((viewPort.right / mineWidth).toInt(), map.width - 1)
     val mineBottom = kotlin.math.min((viewPort.bottom / mineHeight).toInt(), map.height - 1)
 
-    drawItemBorderAndBg(transform, map, drawConfig, mineLeft, mineTop, mineRight, mineBottom)
+    drawItemBorderAndBg(transform, map, drawConfig, animationFraction, mineLeft, mineTop, mineRight, mineBottom)
 
     for (y in mineTop..mineBottom) {
         for (x in mineLeft..mineRight) {
             when(drawConfig) {
                 is MineDrawConfig.Font -> drawMineWithFont(transform, map.getItemUI(y, x), Offset(x * mineWidth, y * mineHeight), drawConfig)
-                is MineDrawConfig.Image -> drawMineWithImage(transform, map, y, x, drawConfig)
+                is MineDrawConfig.Image -> drawMineWithImage(transform, map, y, x, animationFraction, drawConfig)
             }
         }
     }
@@ -93,6 +95,8 @@ private fun DrawScope.drawMineWithFont(
                     drawTextAtCenter(drawConfig.textMeasurer, item.num.toString(), outerSize, drawConfig.textStyle, offset)
                 }
             }
+
+            GameInstance.MineItemUI.BlinkAnimation -> Unit
         }
     }
 }
@@ -119,7 +123,10 @@ private fun DrawScope.drawTextAtCenter(
 }
 
 private fun DrawScope.drawItemBorderAndBg(
-    transform: Matrix, map: GameInstance.MineMapUI, drawConfig: MineDrawConfig,
+    transform: Matrix,
+    map: GameInstance.MineMapUI,
+    drawConfig: MineDrawConfig,
+    animationFraction: Float,
     left: Int, top: Int, right: Int, bottom: Int,
 ) {
     withTransform(
@@ -138,6 +145,13 @@ private fun DrawScope.drawItemBorderAndBg(
                 GameInstance.MineItemUI.MineView -> drawConfig.colors.markedFill
                 GameInstance.MineItemUI.OpenedBoom -> drawConfig.colors.errorFill
                 is GameInstance.MineItemUI.Opened -> null
+                GameInstance.MineItemUI.BlinkAnimation -> {
+                    if (animationFraction < 0.5f) {
+                        drawConfig.colors.hiddenFill.transform(drawConfig.colors.hiddenHoverFill, animationFraction * 2)
+                    } else {
+                        drawConfig.colors.hiddenHoverFill.transform(drawConfig.colors.hiddenFill, (animationFraction - 0.5f) * 2)
+                    }
+                }
             }?.let { fillColor ->
                 drawRoundRect(fillColor, paddingOffset, innerSize, fillCorner)
             }
@@ -163,6 +177,7 @@ private fun DrawScope.drawMineWithImage(
     map: GameInstance.MineMapUI,
     y: Int,
     x: Int,
+    animationFraction: Float,
     drawConfig: MineDrawConfig.Image,
 ) {
     val offset = Offset(x * drawConfig.mineSize.toPx(), y * drawConfig.mineSize.toPx())
@@ -186,6 +201,7 @@ private fun DrawScope.drawMineWithImage(
                 null
             }
         }
+        GameInstance.MineItemUI.BlinkAnimation -> null
     }?.let { (image, color) ->
         translate(mappedRect.left, mappedRect.top) {
             with(image) {
@@ -226,7 +242,7 @@ sealed class MineDrawConfig(
     val mineSize: Dp = 48.dp,
     val mineCorner: Dp = 3.dp,
     val padding: Dp = 1.dp,
-    val borderWidth: Dp = 1.dp,
+    val borderWidth: Dp = 1.5.dp,
 ) {
     val borderRectSize: Dp = mineSize - padding * 2
 
@@ -242,7 +258,7 @@ sealed class MineDrawConfig(
         val mineImage: Painter,
         val flagImage: Painter,
         val questionMark: Painter,
-        val innerPadding: Dp = 4.dp,
+        val innerPadding: Dp = 6.dp,
     ) : MineDrawConfig(mineCanvasColor) {
         val imageSize = borderRectSize - innerPadding * 2
     }

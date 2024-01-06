@@ -1,5 +1,6 @@
 package andy.zhu.minesweeper.extensions
 
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Matrix
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.SharingStarted
@@ -69,4 +70,13 @@ fun Matrix.scale(scaleX: Float, scaleY: Float, pivotX: Float, pivotY: Float) {
 
 fun Matrix.postTranslate(translateX: Float, translateY: Float) {
     translate(translateX / scaleX(), translateY / scaleY())
+}
+
+fun Color.transform(to: Color, fraction: Float): Color {
+    return Color(
+        red = this.red + (to.red - this.red) * fraction,
+        green = this.green + (to.green - this.green) * fraction,
+        blue = this.blue + (to.blue - this.blue) * fraction,
+        alpha = this.alpha + (to.alpha - this.alpha) * fraction,
+    )
 }
