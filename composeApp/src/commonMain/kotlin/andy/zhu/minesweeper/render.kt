@@ -213,8 +213,8 @@ data class MineCanvasColor(
             hiddenHoverFill = colorScheme.inversePrimary,
             markedFill = colorScheme.primaryContainer.copy(alpha = 0.5f),
             errorFill = colorScheme.errorContainer,
-            number = colorScheme.onBackground,
-            marker = colorScheme.secondary,
+            number = colorScheme.secondary,
+            marker = colorScheme.tertiary,
             mineShow = colorScheme.primary,
             error = colorScheme.error,
         )
