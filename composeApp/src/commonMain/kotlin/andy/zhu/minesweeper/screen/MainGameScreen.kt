@@ -284,7 +284,10 @@ fun MainGameScreen(component: MainGameScreenComponent) {
         showFailedDialog.value = failed
     }
     if (showFailedDialog.value) {
-        FailureDialog { showFailedDialog.value = false }
+        FailureDialog(
+            onDismissRequest = { showFailedDialog.value = false },
+            onRetry = component::onRefresh,
+        )
     }
 }
 
@@ -364,19 +367,36 @@ private fun MineFab(gameInstance: GameInstance) {
 }
 
 @Composable
-private fun FailureDialog(onDismissRequest: () -> Unit) {
+private fun FailureDialog(
+    onDismissRequest: () -> Unit,
+    onRetry: () -> Unit,
+) {
     AlertDialog(
         confirmButton = {
             TextButton(
+                onClick = {
+                    onDismissRequest()
+                    onRetry()
+                }
+            ) {
+                Text("Try Again!")
+            }
+        },
+        dismissButton = {
+            TextButton(
                 onClick = onDismissRequest
             ) {
-                Text("Ok")
+                Text("Cancel")
             }
         },
         onDismissRequest = onDismissRequest,
+        title = {
+            Text("Game Over")
+        },
         text = {
-            Text("😢")
-        }
+            Text("You failed!😢")
+        },
+        tonalElevation = 10.dp,
     )
 }
 
