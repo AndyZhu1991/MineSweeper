@@ -11,10 +11,12 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectTransformGestures
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
@@ -160,6 +162,9 @@ fun MainGameScreen(component: MainGameScreenComponent) {
             CenterAlignedTopAppBar(
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
                     containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f),
+                    navigationIconContentColor = MaterialTheme.colorScheme.secondary,
+                    titleContentColor = MaterialTheme.colorScheme.secondary,
+                    actionIconContentColor = MaterialTheme.colorScheme.secondary,
                 ),
                 title = { Title(gameInstance) },
                 navigationIcon = {
@@ -305,32 +310,36 @@ private fun Title(gameInstance: GameInstance) {
     val timeString by gameInstance.timeString.collectAsState("0")
     val minesRemaining by gameInstance.minesRemainingText.collectAsState("")
 
-    Row {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             Icon(
                 painter = painterResource("clock.xml"),
                 contentDescription = null,
-                modifier = Modifier.size(32.dp),
+                modifier = Modifier.size(22.dp),
             )
             Text(
                 timeString,
-                modifier = Modifier.padding(start = 4.dp),
-                style = MaterialTheme.typography.headlineMedium,
+                modifier = Modifier.padding(start = 4.dp, bottom = 2.dp),
+                style = MaterialTheme.typography.titleLarge,
             )
         }
         Row(
+            modifier = Modifier.offset(y = (-2).dp),
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(start = 24.dp),
         ) {
             Icon(
                 painter = painterResource("mine.xml"),
                 contentDescription = null,
-                modifier = Modifier.size(32.dp),
+                modifier = Modifier.size(14.dp),
             )
             Text(
                 minesRemaining,
-                modifier = Modifier.padding(start = 4.dp),
-                style = MaterialTheme.typography.headlineMedium,
+                modifier = Modifier.padding(start = 2.dp, bottom = 1.dp),
+                style = MaterialTheme.typography.titleSmall,
             )
         }
     }
