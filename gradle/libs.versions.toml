@@ -19,6 +19,9 @@ kotlinx-coroutines = "1.7.3"
 decompose = "3.0.0-alpha04"
 essenty = "2.0.0-alpha02"
 napier = "2.7.0"
+datetime = "0.5.0"
+settings = "1.1.1"
+kotlinx-serialization-json = "1.6.2"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -43,6 +46,9 @@ decompose-extension = { module = "com.arkivanov.decompose:extensions-compose", v
 essenty = { module = "com.arkivanov.essenty:lifecycle", version.ref = "essenty" }
 essenty-coroutines = { module = "com.arkivanov.essenty:lifecycle-coroutines", version.ref = "essenty" }
 napier = { module = "io.github.aakira:napier", version.ref = "napier" }
+kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "datetime" }
+settings = { module = "com.russhwolf:multiplatform-settings", version.ref = "settings" }
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization-json" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

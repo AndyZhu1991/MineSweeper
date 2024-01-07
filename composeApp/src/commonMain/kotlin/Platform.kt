@@ -4,11 +4,13 @@ import androidx.compose.ui.input.pointer.AwaitPointerEventScope
 import androidx.compose.ui.input.pointer.PointerEvent
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerEventType
+import com.russhwolf.settings.Settings
 
 interface Platform {
     val name: String
     val isMobile: Boolean
     val isLandscape: Boolean get() { return isMobile }
+    val settings: Settings
 }
 
 expect fun getPlatform(): Platform

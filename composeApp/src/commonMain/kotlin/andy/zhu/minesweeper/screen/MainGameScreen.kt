@@ -9,17 +9,21 @@ import androidx.compose.animation.core.TwoWayConverter
 import androidx.compose.animation.core.VectorConverter
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Refresh
@@ -31,6 +35,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
@@ -46,6 +51,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
@@ -65,6 +71,12 @@ import andy.zhu.minesweeper.extensions.scaleX
 import andy.zhu.minesweeper.extensions.scaleY
 import andy.zhu.minesweeper.extensions.transformed
 import andy.zhu.minesweeper.navigation.MainGameScreenComponent
+import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import mousePointerMatcher
 import onPointerEvent
 import org.jetbrains.compose.resources.ExperimentalResourceApi
@@ -302,10 +314,49 @@ private fun SuccessDialog(onDismissRequest: () -> Unit) {
             }
         },
         onDismissRequest = onDismissRequest,
+        title = {
+            Text("Congratulations!")
+        },
         text = {
-            Text("Congratuation!")
+            Column {
+                for (i in 1..10) {
+                    RankLine(i, i, i == 3)
+                }
+            }
         }
     )
+}
+
+@Composable
+private fun RankLine(order: Int, score: Int, isCurrent: Boolean) {
+    Row(
+        verticalAlignment = Alignment.Bottom,
+        modifier = Modifier
+            .width(280.dp)
+            .then(
+                if (isCurrent)
+                    Modifier.background(MaterialTheme.colorScheme.inversePrimary, RoundedCornerShape(2.dp))
+                else
+                    Modifier
+            ),
+    ) {
+        Icon(
+            painterResource("numeric_$order.png"),
+            contentDescription = null,
+            modifier = Modifier.size(24.dp),
+        )
+        Text(
+            Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date.toString(),
+            modifier = Modifier.padding(bottom = 1.5.dp),
+        )
+        Surface(
+            modifier = Modifier.weight(1f)
+        ) {}
+        Text(
+            "${score}s",
+            modifier = Modifier.padding(bottom = 1.5.dp, end = 3.dp),
+        )
+    }
 }
 
 @Composable

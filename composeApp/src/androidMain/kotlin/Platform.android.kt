@@ -5,11 +5,16 @@ import androidx.compose.ui.input.pointer.AwaitPointerEventScope
 import androidx.compose.ui.input.pointer.PointerEvent
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerEventType
+import andy.zhu.minesweeper.MineApplication
+import com.russhwolf.settings.Settings
+import com.russhwolf.settings.SharedPreferencesSettings
 
 object AndroidPlatform : Platform {
     override val name: String = "Android ${Build.VERSION.SDK_INT}"
 
     override val isMobile: Boolean = true
+
+    override val settings: Settings = SharedPreferencesSettings.Factory(MineApplication.instance).create()
 }
 
 actual fun getPlatform(): Platform = AndroidPlatform

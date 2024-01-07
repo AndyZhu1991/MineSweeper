@@ -59,6 +59,9 @@ kotlin {
             implementation(libs.essenty)
             implementation(libs.essenty.coroutines)
             implementation(libs.napier)
+            implementation(libs.kotlinx.datetime)
+            implementation(libs.settings)
+            implementation(libs.kotlinx.serialization.json)
         }
         androidMain.dependencies {
             implementation(libs.compose.ui.tooling.preview)
