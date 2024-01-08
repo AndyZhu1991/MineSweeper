@@ -7,6 +7,7 @@ sealed class GameConfig(
     val width: Int,
     val height: Int,
     val mineCount: Int,
+    val levelName: String,
 ) {
     fun mapSize() = width * height
 
@@ -15,18 +16,18 @@ sealed class GameConfig(
     }
 
     @Serializable
-    data object Easy: GameConfig(10, 10, 10)
+    data object Easy: GameConfig(10, 10, 10, "Easy")
 
     @Serializable
-    data object Medium: GameConfig(21, 14, 30)
+    data object Medium: GameConfig(21, 14, 30, "Medium")
 
     @Serializable
-    data object Hard: GameConfig(30, 20, 80)
+    data object Hard: GameConfig(30, 20, 80, "Hard")
 
     @Serializable
     data class Custom(
         private val w: Int,
         private val h: Int,
         private val c: Int,
-    ): GameConfig(w, h, c)
+    ): GameConfig(w, h, c, "Custom")
 }
