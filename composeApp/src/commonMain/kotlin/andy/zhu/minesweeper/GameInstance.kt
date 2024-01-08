@@ -3,11 +3,15 @@ package andy.zhu.minesweeper
 import androidx.compose.ui.unit.IntOffset
 import andy.zhu.minesweeper.extensions.combine
 import andy.zhu.minesweeper.extensions.map
+import andy.zhu.minesweeper.settings.RecordItem
+import andy.zhu.minesweeper.settings.getObject
+import andy.zhu.minesweeper.settings.putObject
 import getPlatform
 import kotlinx.coroutines.*
 
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.datetime.Clock
 
 class GameInstance(
     val gameConfig: GameConfig,
@@ -42,6 +46,13 @@ class GameInstance(
 
     val gameWin = openedCount.map(coroutineScope) { it == gameConfig.mapSize() - gameConfig.mineCount }
     val gameOver = MutableStateFlow(false)
+    val gameWinInfo: StateFlow<GameWinInfo?> = openedCount.map(coroutineScope) {
+        if (it == gameConfig.mapSize() - gameConfig.mineCount) {
+            buildWinInfo()
+        } else {
+            null
+        }
+    }
 
     private val gameEnd = gameWin.combine(coroutineScope, gameOver) { succeed, failed ->
         succeed || failed
@@ -308,6 +319,25 @@ class GameInstance(
         timerJob?.cancel()
         timerJob = null
     }
+
+    private fun buildWinInfo(): GameWinInfo {
+        if (gameConfig is GameConfig.Custom) {
+            return GameWinInfo(emptyList(), -1)
+        }
+
+        val records: List<RecordItem> = getPlatform().settings.getObject(
+            "record-${gameConfig.levelName}", emptyList())
+        val currentRecord = RecordItem(
+            Clock.System.now().toEpochMilliseconds(),
+            timeSeconds.value * 1000L
+        )
+        val newRecords = (listOf(currentRecord) + records)
+            .sortedBy { it.costTimeMillis }
+            .take(RECORD_KEEP_COUNT)
+        val currentRank = newRecords.indexOf(currentRecord)
+        getPlatform().settings.putObject("record-${gameConfig.levelName}", newRecords)
+        return GameWinInfo(newRecords, currentRank)
+    }
     
     enum class GridStatus {
         HIDDEN, OPENED, FLAGGED, UNCERTAIN
@@ -363,7 +393,14 @@ class GameInstance(
         }
     }
 
+    class GameWinInfo(
+        val records: List<RecordItem>,
+        val yourRank: Int,
+    )
+
     companion object {
+        private const val RECORD_KEEP_COUNT = 5
+
         private fun toTimeString(timeSeconds: Int): String {
             val minute = timeSeconds / 60
             val second = timeSeconds % 60

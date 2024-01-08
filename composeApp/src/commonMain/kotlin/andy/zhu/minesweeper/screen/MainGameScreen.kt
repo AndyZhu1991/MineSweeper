@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -51,7 +50,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
@@ -72,9 +70,6 @@ import andy.zhu.minesweeper.extensions.scaleY
 import andy.zhu.minesweeper.extensions.transformed
 import andy.zhu.minesweeper.navigation.MainGameScreenComponent
 import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
-import kotlinx.datetime.LocalDate
-import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import mousePointerMatcher
@@ -281,13 +276,13 @@ fun MainGameScreen(component: MainGameScreenComponent) {
     }
 
 
-    val succeed by gameInstance.gameWin.collectAsState(false)
+    val winInfo by gameInstance.gameWinInfo.collectAsState(null)
     val showSuccessDialog = remember { mutableStateOf(false) }
-    LaunchedEffect(succeed) {
-        showSuccessDialog.value = succeed
+    LaunchedEffect(winInfo) {
+        showSuccessDialog.value = winInfo != null
     }
-    if (showSuccessDialog.value) {
-        SuccessDialog { showSuccessDialog.value = false }
+    if (showSuccessDialog.value && winInfo != null) {
+        SuccessDialog(winInfo!!) { showSuccessDialog.value = false }
     }
 
     val failed by gameInstance.gameOver.collectAsState(false)
@@ -304,7 +299,10 @@ fun MainGameScreen(component: MainGameScreenComponent) {
 }
 
 @Composable
-private fun SuccessDialog(onDismissRequest: () -> Unit) {
+private fun SuccessDialog(
+    gameWinInfo: GameInstance.GameWinInfo,
+    onDismissRequest: () -> Unit,
+) {
     AlertDialog(
         confirmButton = {
             TextButton(
@@ -319,8 +317,9 @@ private fun SuccessDialog(onDismissRequest: () -> Unit) {
         },
         text = {
             Column {
-                for (i in 1..10) {
-                    RankLine(i, i, i == 3)
+                gameWinInfo.records.forEachIndexed { index, recordItem ->
+                    RankLine(index + 1, (recordItem.costTimeMillis / 1000).toInt(),
+                        gameWinInfo.yourRank == index)
                 }
             }
         }
