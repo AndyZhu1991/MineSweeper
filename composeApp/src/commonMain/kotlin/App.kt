@@ -16,8 +16,7 @@ import com.arkivanov.decompose.extensions.compose.subscribeAsState
 @Composable
 fun App(root: RootComponent) {
     MaterialTheme(
-//        colorScheme = if (isSystemInDarkTheme()) darkColorScheme() else lightColorScheme()
-        colorScheme = lightColorScheme(),
+        colorScheme = if (isSystemInDarkTheme()) darkColorScheme() else lightColorScheme()
         ) {
         val childStack by root.childStack.subscribeAsState()
         Surface {

@@ -7,6 +7,7 @@ import com.arkivanov.essenty.lifecycle.coroutines.coroutineScope
 import com.arkivanov.essenty.lifecycle.doOnPause
 import com.arkivanov.essenty.lifecycle.doOnResume
 import io.github.aakira.napier.Napier
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 
 class MainGameScreenComponent(
@@ -14,7 +15,7 @@ class MainGameScreenComponent(
     val level: GameConfig,
     val onClose: () -> Unit,
 ) : ComponentContext by componentContext {
-    private val coroutineScrop = coroutineScope()
+    private val coroutineScrop = coroutineScope(Dispatchers.Default)
     val gameInstance = MutableStateFlow(GameInstance(level, coroutineScrop))
 
     init {

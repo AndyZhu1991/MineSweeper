@@ -47,6 +47,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
@@ -405,12 +406,14 @@ private fun MineFab(gameInstance: GameInstance) {
     if (gameInstance.showFab) {
         FloatingActionButton(
             onClick = gameInstance::switchTapAction,
-            containerColor = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.alpha(0.8f),
+            containerColor = MaterialTheme.colorScheme.secondaryContainer,
         ) {
             Icon(
                 painter = painterResource(if (flagWhenTap) "flag.xml" else "mine.xml"),
                 contentDescription = "",
                 modifier = Modifier.size(36.dp),
+                tint = MaterialTheme.colorScheme.onSecondaryContainer,
             )
         }
     }

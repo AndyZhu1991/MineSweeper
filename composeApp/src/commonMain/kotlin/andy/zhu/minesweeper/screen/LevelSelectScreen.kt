@@ -15,9 +15,12 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
@@ -26,19 +29,24 @@ import andy.zhu.minesweeper.GameInstance
 import andy.zhu.minesweeper.MineDrawConfig
 import andy.zhu.minesweeper.drawMines
 import andy.zhu.minesweeper.navigation.LevelSelectScreenComponent
+import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.painterResource
 
-private val levels = listOf(GameConfig.Easy, GameConfig.Medium, GameConfig.Hard)
+private val levels = listOf(GameConfig.Easy, GameConfig.Medium, GameConfig.Hard, GameConfig.Extreme)
+
+private val pageSize: DpSize = DpSize(260.dp, 160.dp)
+private val pagePadding = 8.dp
 
 @Composable
 fun LevelSelectScreen(component: LevelSelectScreenComponent) {
     Column(
         modifier = Modifier.fillMaxSize(),
     ) {
-//        Spacer(Modifier.windowInsetsTopHeight(WindowInsets.systemBars))
-
-        var mainAreaSize: IntSize? by remember { mutableStateOf(null) }
+        var mainAreaSize: IntSize by remember { mutableStateOf(IntSize(1080, 1920)) }
+        val dpSize = with(LocalDensity.current) {
+            mainAreaSize.toSize().toDpSize()
+        }
 
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -47,40 +55,90 @@ fun LevelSelectScreen(component: LevelSelectScreenComponent) {
                 .weight(1f)
                 .onGloballyPositioned { mainAreaSize = it.size },
         ) {
-            with(LocalDensity.current) {
-                mainAreaSize?.toSize()?.toDpSize()?.let { dpSize ->
-                    val coroutineScope = rememberCoroutineScope()
-                    val gameInstance = remember(mainAreaSize) {
-                        val mineMapWidth = kotlin.math.ceil(dpSize.width / MineDrawConfig.defaultMineSize).toInt()
-                        val mineMapHeight = (dpSize.height * 0.4f / MineDrawConfig.defaultMineSize).toInt()
-                        val mineCount = mineMapHeight * mineMapWidth / 8
-                        GameInstance(GameConfig.Custom(mineMapWidth, mineMapHeight, mineCount), coroutineScope).apply {
-                            onMineTap(Position(mineMapWidth / 2, mineMapHeight / 2))
-                            onPause()
-                        }
+            val coroutineScope = rememberCoroutineScope()
+
+            if (dpSize.height >= 500.dp) {
+                val gameInstance = remember(mainAreaSize) {
+                    val mineMapWidth = kotlin.math.ceil(dpSize.width / MineDrawConfig.defaultMineSize).toInt()
+                    val mineMapHeight = (dpSize.height * 0.4f / MineDrawConfig.defaultMineSize).toInt()
+                    val mineCount = mineMapHeight * mineMapWidth / 8
+                    GameInstance(GameConfig.Custom(mineMapWidth, mineMapHeight, mineCount), coroutineScope).apply {
+                        onMineTap(Position(mineMapWidth / 2, mineMapHeight / 2))
+                        onPause()
                     }
-                    val drawConfig = CreateDrawConfig()
+                }
+                val drawConfig = CreateDrawConfig()
+                Box(
+                    modifier = Modifier.fillMaxWidth().height(MineDrawConfig.defaultMineSize * gameInstance.gameConfig.height)
+                ) {
                     Canvas(
                         modifier = Modifier.fillMaxWidth().height(MineDrawConfig.defaultMineSize * gameInstance.gameConfig.height)
                     ) {
                         drawMines(Matrix(), gameInstance.mapUIFlow.value, 0f, drawConfig)
                     }
+                    Box(
+                        modifier = Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(
+                            Color.Transparent, Color.Transparent, Color.Transparent, MaterialTheme.colorScheme.surface
+                        )))
+                    )
                 }
+                Spacer(Modifier.height(32.dp))
+            } else {
+                Spacer(Modifier.windowInsetsTopHeight(WindowInsets.systemBars))
             }
 
-            Spacer(Modifier.height(48.dp))
+            Spacer(Modifier.height(16.dp))
 
+            val fullWidthPager = dpSize.width <= 420.dp
+            val pagerWidth = if (fullWidthPager) dpSize.width else pageSize.width + pagePadding * 2
             val pagerState = rememberPagerState(pageCount = {
                 levels.size
             })
-            HorizontalPager(
-                state = pagerState,
-                contentPadding = PaddingValues(start = 20.dp, end = 12.dp),
-                modifier = Modifier.width(280.dp),
-                pageSize = PageSize.Fixed(240.dp),
-                pageSpacing = 8.dp,
+            Row(
+                modifier = Modifier.fillMaxWidth().height(pageSize.height),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                LevelCard(levels[it])
+                if (!fullWidthPager) {
+                    IconButton(
+                        onClick = {
+                            coroutineScope.launch {
+                                if (pagerState.canScrollBackward && !pagerState.isScrollInProgress) {
+                                    pagerState.animateScrollToPage(pagerState.currentPage - 1)
+                                }
+                            }
+                        },
+                        enabled = pagerState.canScrollBackward,
+                    ) {
+                        Icon(painterResource("arrow_back.xml"), contentDescription = null)
+                    }
+                }
+                HorizontalPager(
+                    state = pagerState,
+                    contentPadding = PaddingValues(
+                        start = (pagerWidth - pageSize.width) / 2,
+                        end = (pagerWidth - pageSize.width) / 2 - pagePadding
+                    ),
+                    modifier = Modifier.width(pagerWidth),
+                    pageSize = PageSize.Fixed(pageSize.width),
+                    pageSpacing = pagePadding,
+                ) {
+                    LevelCard(levels[it])
+                }
+                if (!fullWidthPager) {
+                    IconButton(
+                        onClick = {
+                            coroutineScope.launch {
+                                if (pagerState.canScrollForward && !pagerState.isScrollInProgress) {
+                                    pagerState.animateScrollToPage(pagerState.currentPage + 1)
+                                }
+                            }
+                        },
+                        enabled = pagerState.canScrollForward,
+                    ) {
+                        Icon(painterResource("arrow_forward.xml"), contentDescription = null)
+                    }
+                }
             }
 
             Spacer(Modifier.height(24.dp))
@@ -89,9 +147,9 @@ fun LevelSelectScreen(component: LevelSelectScreenComponent) {
                 onClick = {
                     component.onLevelSelected(levels[pagerState.currentPage])
                 },
-                modifier = Modifier.width(240.dp),
+                modifier = Modifier.width(pageSize.width),
             ) {
-                Text("Start")
+                Text("New Game")
             }
         }
 
@@ -102,7 +160,7 @@ fun LevelSelectScreen(component: LevelSelectScreenComponent) {
 @Composable
 private fun LevelCard(level: GameConfig) {
     OutlinedCard(
-        modifier = Modifier.width(240.dp).height(160.dp),
+        modifier = Modifier.size(pageSize),
     ) {
         Column(
             modifier = Modifier.fillMaxSize(),
@@ -118,14 +176,15 @@ private fun LevelCard(level: GameConfig) {
                     modifier = Modifier
                         .align(Alignment.CenterStart)
                         .padding(start = 16.dp),
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
                     style = MaterialTheme.typography.displayMedium,
-                    )
+                )
             }
             Box(
                 modifier = Modifier.weight(1f).padding(start = 16.dp),
             ) {
                 Text(
-                    "This level is for beginners.",
+                    level.shortDesc(),
                     modifier = Modifier.align(Alignment.CenterStart),
                     style = MaterialTheme.typography.titleMedium,
                 )
@@ -148,10 +207,6 @@ private fun LevelCard(level: GameConfig) {
                     modifier = Modifier.padding(start = 4.dp),
                     style = MaterialTheme.typography.bodyLarge,
                 )
-//                Row(
-//                    modifier = Modifier.align(Alignment.BottomEnd),
-//                ) {
-//                }
             }
         }
     }
