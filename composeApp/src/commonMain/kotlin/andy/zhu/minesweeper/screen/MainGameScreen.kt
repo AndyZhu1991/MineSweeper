@@ -451,7 +451,7 @@ private fun FailureDialog(
 }
 
 @Composable
-private fun CreateDrawConfig(): MineDrawConfig {
+fun CreateDrawConfig(): MineDrawConfig {
     return MineDrawConfig.Image(
         MineCanvasColor.fromColorScheme(MaterialTheme.colorScheme),
         (0 until 10).map { painterResource("numeric_$it.png") },

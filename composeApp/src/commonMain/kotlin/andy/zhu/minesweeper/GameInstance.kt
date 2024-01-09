@@ -15,9 +15,8 @@ import kotlinx.datetime.Clock
 
 class GameInstance(
     val gameConfig: GameConfig,
+    private val coroutineScope: CoroutineScope,
 ) {
-    private val coroutineScope = CoroutineScope(Dispatchers.Default)
-
     private val hasMine = BooleanArray(gameConfig.mapSize())
     private val mineCount = IntArray(gameConfig.mapSize())
     private val status = Array(gameConfig.mapSize()) { GridStatus.HIDDEN }
@@ -44,7 +43,6 @@ class GameInstance(
     private val _flagWhenTap = MutableStateFlow(getPlatform().isMobile)  // Flag the grid when tap
     val flagWhenTap: StateFlow<Boolean> = _flagWhenTap
 
-    val gameWin = openedCount.map(coroutineScope) { it == gameConfig.mapSize() - gameConfig.mineCount }
     val gameOver = MutableStateFlow(false)
     val gameWinInfo: StateFlow<GameWinInfo?> = openedCount.map(coroutineScope) {
         if (it == gameConfig.mapSize() - gameConfig.mineCount) {
@@ -54,8 +52,8 @@ class GameInstance(
         }
     }
 
-    private val gameEnd = gameWin.combine(coroutineScope, gameOver) { succeed, failed ->
-        succeed || failed
+    private val gameEnd = gameWinInfo.combine(coroutineScope, gameOver) { winInfo, failed ->
+        winInfo != null || failed
     }
 
     init {
@@ -77,7 +75,7 @@ class GameInstance(
     }
 
     fun onDestroy() {
-        coroutineScope.cancel()
+        stopTimer()
     }
 
     fun onMineTap(position: Position) {
