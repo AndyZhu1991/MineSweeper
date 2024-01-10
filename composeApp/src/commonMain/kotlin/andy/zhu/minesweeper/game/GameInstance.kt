@@ -26,8 +26,8 @@ class GameInstance(
     private var hoverPosition: Position? = null
 
     private var timerJob: Job? = null
-    private val timeSeconds = MutableStateFlow<Int>(0)
-    val timeString: StateFlow<String> = timeSeconds.map(coroutineScope, Companion::toTimeString)
+    private val timeMillis = MutableStateFlow(0)
+    val timeString: StateFlow<String> = timeMillis.map(coroutineScope, Companion::toTimeString)
 
     private val openedCount = MutableStateFlow(0)
     private val flaggedCount = MutableStateFlow(0)
@@ -43,6 +43,8 @@ class GameInstance(
     private val _flagWhenTap = MutableStateFlow(getPlatform().isMobile)  // Flag the grid when tap
     val flagWhenTap: StateFlow<Boolean> = _flagWhenTap
 
+    val gameStarted = openedCount.map(coroutineScope) { it > 0 }
+
     val gameOver = MutableStateFlow(false)
     val gameWinInfo: StateFlow<GameWinInfo?> = openedCount.map(coroutineScope) {
         if (it == gameConfig.mapSize() - gameConfig.mineCount) {
@@ -52,7 +54,7 @@ class GameInstance(
         }
     }
 
-    private val gameEnd = gameWinInfo.combine(coroutineScope, gameOver) { winInfo, failed ->
+    val gameEnd = gameWinInfo.combine(coroutineScope, gameOver) { winInfo, failed ->
         winInfo != null || failed
     }
 
@@ -307,7 +309,7 @@ class GameInstance(
             timerJob = coroutineScope.launch {
                 while (true) {
                     delay(1000)
-                    timeSeconds.value += 1
+                    timeMillis.value += 1000
                 }
             }
         }
@@ -327,7 +329,7 @@ class GameInstance(
             "record-${gameConfig.name()}", emptyList())
         val currentRecord = RecordItem(
             Clock.System.now().toEpochMilliseconds(),
-            timeSeconds.value * 1000L
+            timeMillis.value.toLong(),
         )
         val newRecords = (listOf(currentRecord) + records)
             .sortedBy { it.costTimeMillis }
@@ -335,6 +337,10 @@ class GameInstance(
         val currentRank = newRecords.indexOf(currentRecord)
         getPlatform().settings.putObject("record-${gameConfig.name()}", newRecords)
         return GameWinInfo(newRecords, currentRank)
+    }
+
+    fun save(): GameSave {
+        return GameSave.fromGameInstance(gameConfig, hasMine, status, timeMillis.value)
     }
     
     enum class GridStatus {
@@ -399,7 +405,8 @@ class GameInstance(
     companion object {
         private const val RECORD_KEEP_COUNT = 5
 
-        private fun toTimeString(timeSeconds: Int): String {
+        private fun toTimeString(timeMillis: Int): String {
+            val timeSeconds = timeMillis / 1000
             val minute = timeSeconds / 60
             val second = timeSeconds % 60
             return if (second < 10) {
@@ -407,6 +414,24 @@ class GameInstance(
             } else {
                 "$minute:$second"
             }
+        }
+
+        fun fromGameSave(
+            gameSave: GameSave,
+            coroutineScope: CoroutineScope
+        ): GameInstance = GameInstance(gameSave.gameConfig, coroutineScope).apply {
+            hasMine.fill(false)
+            gameSave.mineIndices.forEach { hasMine[it] = true }
+            mineCount.fill(0)
+            initCountArray()
+            status.fill(GridStatus.HIDDEN)
+            gameSave.openedIndices.forEach { status[it] = GridStatus.OPENED }
+            gameSave.flaggedIndices.forEach { status[it] = GridStatus.FLAGGED }
+            timeMillis.value = gameSave.timeMillis
+            openedCount.value = gameSave.openedIndices.size
+            flaggedCount.value = gameSave.flaggedIndices.size
+            updateMapUI()
+            startTimer()
         }
     }
 }

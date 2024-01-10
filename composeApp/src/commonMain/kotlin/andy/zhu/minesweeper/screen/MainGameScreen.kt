@@ -123,7 +123,7 @@ fun MainGameScreen(component: MainGameScreenComponent) {
             val mineSize = with(density) {
                 Size(mineDrawConfig.mineSize.toPx(), mineDrawConfig.mineSize.toPx())
             }
-            calcInitMatrix(mineSize, component.level.width, component.level.height, contentInner)
+            calcInitMatrix(mineSize, component.gameConfig.width, component.gameConfig.height, contentInner)
         }
         is CanvasTransform.FixedTransform -> matrix
         is CanvasTransform.AnimatedTransform -> matrix

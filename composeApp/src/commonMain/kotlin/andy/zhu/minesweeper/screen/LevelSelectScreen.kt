@@ -4,6 +4,9 @@
 
 package andy.zhu.minesweeper.screen
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -28,7 +31,11 @@ import andy.zhu.minesweeper.game.GameConfig
 import andy.zhu.minesweeper.game.GameInstance
 import andy.zhu.minesweeper.MineDrawConfig
 import andy.zhu.minesweeper.drawMines
+import andy.zhu.minesweeper.game.GameSave
+import andy.zhu.minesweeper.game.GameSave.Companion.saveKey
 import andy.zhu.minesweeper.navigation.LevelSelectScreenComponent
+import andy.zhu.minesweeper.settings.getObjectOrNull
+import getPlatform
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.painterResource
@@ -89,11 +96,23 @@ fun LevelSelectScreen(component: LevelSelectScreenComponent) {
 
             Spacer(Modifier.height(16.dp))
 
+            val savedGames = remember { mutableMapOf<GameConfig.Level, GameSave?>() }
+            var showResumeButton by remember { mutableStateOf(false) }
+
             val fullWidthPager = dpSize.width <= 420.dp
             val pagerWidth = if (fullWidthPager) dpSize.width else pageSize.width + pagePadding * 2
             val pagerState = rememberPagerState(pageCount = {
                 levels.size
             })
+            LaunchedEffect(pagerState) {
+                snapshotFlow { pagerState.currentPage }.collect {
+                    val currentConfig = levels[it]
+                    if (!savedGames.containsKey(currentConfig.level)) {
+                        savedGames[currentConfig.level] = getPlatform().settings.getObjectOrNull(currentConfig.saveKey())
+                    }
+                    showResumeButton = savedGames[currentConfig.level] != null
+                }
+            }
             Row(
                 modifier = Modifier.fillMaxWidth().height(pageSize.height),
                 horizontalArrangement = Arrangement.Center,
@@ -103,7 +122,7 @@ fun LevelSelectScreen(component: LevelSelectScreenComponent) {
                     IconButton(
                         onClick = {
                             coroutineScope.launch {
-                                if (pagerState.canScrollBackward && !pagerState.isScrollInProgress) {
+                                if (pagerState.canScrollBackward) {
                                     pagerState.animateScrollToPage(pagerState.currentPage - 1)
                                 }
                             }
@@ -129,7 +148,7 @@ fun LevelSelectScreen(component: LevelSelectScreenComponent) {
                     IconButton(
                         onClick = {
                             coroutineScope.launch {
-                                if (pagerState.canScrollForward && !pagerState.isScrollInProgress) {
+                                if (pagerState.canScrollForward) {
                                     pagerState.animateScrollToPage(pagerState.currentPage + 1)
                                 }
                             }
@@ -150,6 +169,23 @@ fun LevelSelectScreen(component: LevelSelectScreenComponent) {
                 modifier = Modifier.width(pageSize.width),
             ) {
                 Text("New Game")
+            }
+
+            AnimatedVisibility(
+                showResumeButton,
+                enter = fadeIn(),
+                exit = fadeOut(),
+            ) {
+                OutlinedButton(
+                    onClick = {
+                        savedGames[levels[pagerState.currentPage].level]?.let {
+                            component.onGameResume(it)
+                        }
+                    },
+                    modifier = Modifier.width(pageSize.width),
+                ) {
+                    Text("Resume")
+                }
             }
         }
 

@@ -1,6 +1,7 @@
 package andy.zhu.minesweeper.navigation
 
 import andy.zhu.minesweeper.game.GameConfig
+import andy.zhu.minesweeper.game.GameSave
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.decompose.router.stack.StackNavigation
 import com.arkivanov.decompose.router.stack.childStack
@@ -31,13 +32,23 @@ class RootComponent(
                     componentContext = context,
                     startGame = { level ->
                         navigation.push(Config.MainGameScreen(level))
-                    }
+                    },
+                    resumeGame = { gameSave ->
+                        navigation.push(Config.MainGameScreenFromSave(gameSave))
+                    },
                 ))
             }
             is Config.MainGameScreen -> {
                 Child.MainGameScreen(MainGameScreenComponent(
                     context,
                     config.level,
+                    navigation::pop,
+                ))
+            }
+            is Config.MainGameScreenFromSave -> {
+                Child.MainGameScreen(MainGameScreenComponent(
+                    context,
+                    config.gameSave,
                     navigation::pop,
                 ))
             }
@@ -56,5 +67,8 @@ class RootComponent(
         
         @Serializable
         data class MainGameScreen(val level: GameConfig) : Config()
+
+        @Serializable
+        data class MainGameScreenFromSave(val gameSave: GameSave): Config()
     }
 }
