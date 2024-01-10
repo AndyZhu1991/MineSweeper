@@ -319,12 +319,12 @@ class GameInstance(
     }
 
     private fun buildWinInfo(): GameWinInfo {
-        if (gameConfig is GameConfig.Custom) {
+        if (gameConfig.level == GameConfig.Level.Custom) {
             return GameWinInfo(emptyList(), -1)
         }
 
         val records: List<RecordItem> = getPlatform().settings.getObject(
-            "record-${gameConfig.levelName}", emptyList())
+            "record-${gameConfig.name()}", emptyList())
         val currentRecord = RecordItem(
             Clock.System.now().toEpochMilliseconds(),
             timeSeconds.value * 1000L
@@ -333,7 +333,7 @@ class GameInstance(
             .sortedBy { it.costTimeMillis }
             .take(RECORD_KEEP_COUNT)
         val currentRank = newRecords.indexOf(currentRecord)
-        getPlatform().settings.putObject("record-${gameConfig.levelName}", newRecords)
+        getPlatform().settings.putObject("record-${gameConfig.name()}", newRecords)
         return GameWinInfo(newRecords, currentRank)
     }
     

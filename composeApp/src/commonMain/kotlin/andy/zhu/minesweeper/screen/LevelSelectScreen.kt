@@ -158,7 +158,7 @@ fun LevelSelectScreen(component: LevelSelectScreenComponent) {
 }
 
 @Composable
-private fun LevelCard(level: GameConfig) {
+private fun LevelCard(gameConfig: GameConfig) {
     OutlinedCard(
         modifier = Modifier.size(pageSize),
     ) {
@@ -172,7 +172,7 @@ private fun LevelCard(level: GameConfig) {
                     .background(MaterialTheme.colorScheme.primaryContainer),
             ) {
                 Text(
-                    level.levelName,
+                    gameConfig.name(),
                     modifier = Modifier
                         .align(Alignment.CenterStart)
                         .padding(start = 16.dp),
@@ -184,7 +184,7 @@ private fun LevelCard(level: GameConfig) {
                 modifier = Modifier.weight(1f).padding(start = 16.dp),
             ) {
                 Text(
-                    level.shortDesc(),
+                    gameConfig.shortDesc,
                     modifier = Modifier.align(Alignment.CenterStart),
                     style = MaterialTheme.typography.titleMedium,
                 )
@@ -194,7 +194,7 @@ private fun LevelCard(level: GameConfig) {
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    "${level.width}x${level.height}",
+                    "${gameConfig.width}x${gameConfig.height}",
                     style = MaterialTheme.typography.bodyLarge,
                 )
                 Spacer(Modifier.weight(1f))
@@ -203,7 +203,7 @@ private fun LevelCard(level: GameConfig) {
                     contentDescription = null,
                 )
                 Text(
-                    level.mineCount.toString(),
+                    gameConfig.mineCount.toString(),
                     modifier = Modifier.padding(start = 4.dp),
                     style = MaterialTheme.typography.bodyLarge,
                 )

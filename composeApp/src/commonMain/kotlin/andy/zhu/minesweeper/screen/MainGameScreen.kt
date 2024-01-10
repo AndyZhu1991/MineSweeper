@@ -71,6 +71,7 @@ import andy.zhu.minesweeper.extensions.scaleY
 import andy.zhu.minesweeper.extensions.transformed
 import andy.zhu.minesweeper.navigation.MainGameScreenComponent
 import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import mousePointerMatcher
@@ -320,7 +321,7 @@ private fun SuccessDialog(
             Column {
                 gameWinInfo.records.forEachIndexed { index, recordItem ->
                     RankLine(index + 1, (recordItem.costTimeMillis / 1000).toInt(),
-                        gameWinInfo.yourRank == index)
+                        recordItem.timeStampMillis ,gameWinInfo.yourRank == index)
                 }
             }
         }
@@ -328,7 +329,7 @@ private fun SuccessDialog(
 }
 
 @Composable
-private fun RankLine(order: Int, score: Int, isCurrent: Boolean) {
+private fun RankLine(order: Int, score: Int, timeStamp: Long, isCurrent: Boolean) {
     Row(
         verticalAlignment = Alignment.Bottom,
         modifier = Modifier
@@ -346,7 +347,7 @@ private fun RankLine(order: Int, score: Int, isCurrent: Boolean) {
             modifier = Modifier.size(24.dp),
         )
         Text(
-            Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date.toString(),
+            Instant.fromEpochMilliseconds(timeStamp).toLocalDateTime(TimeZone.currentSystemDefault()).date.toString(),
             modifier = Modifier.padding(bottom = 1.5.dp),
         )
         Surface(
@@ -406,7 +407,6 @@ private fun MineFab(gameInstance: GameInstance) {
     if (gameInstance.showFab) {
         FloatingActionButton(
             onClick = gameInstance::switchTapAction,
-            modifier = Modifier.alpha(0.8f),
             containerColor = MaterialTheme.colorScheme.secondaryContainer,
         ) {
             Icon(
