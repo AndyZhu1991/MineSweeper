@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import andy.zhu.minesweeper.extensions.inverted
 import andy.zhu.minesweeper.extensions.transform
+import andy.zhu.minesweeper.game.GameInstance
 
 
 internal fun DrawScope.drawMines(

@@ -47,7 +47,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
@@ -60,7 +59,7 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
-import andy.zhu.minesweeper.GameInstance
+import andy.zhu.minesweeper.game.GameInstance
 import andy.zhu.minesweeper.MineCanvasColor
 import andy.zhu.minesweeper.MineDrawConfig
 import andy.zhu.minesweeper.drawMines
@@ -70,7 +69,6 @@ import andy.zhu.minesweeper.extensions.scaleX
 import andy.zhu.minesweeper.extensions.scaleY
 import andy.zhu.minesweeper.extensions.transformed
 import andy.zhu.minesweeper.navigation.MainGameScreenComponent
-import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime

@@ -1,7 +1,7 @@
 package andy.zhu.minesweeper.navigation
 
-import andy.zhu.minesweeper.GameConfig
-import andy.zhu.minesweeper.GameInstance
+import andy.zhu.minesweeper.game.GameConfig
+import andy.zhu.minesweeper.game.GameInstance
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.essenty.lifecycle.coroutines.coroutineScope
 import com.arkivanov.essenty.lifecycle.doOnPause

@@ -24,8 +24,8 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
-import andy.zhu.minesweeper.GameConfig
-import andy.zhu.minesweeper.GameInstance
+import andy.zhu.minesweeper.game.GameConfig
+import andy.zhu.minesweeper.game.GameInstance
 import andy.zhu.minesweeper.MineDrawConfig
 import andy.zhu.minesweeper.drawMines
 import andy.zhu.minesweeper.navigation.LevelSelectScreenComponent

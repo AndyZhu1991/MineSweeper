@@ -1,6 +1,6 @@
 package andy.zhu.minesweeper.navigation
 
-import andy.zhu.minesweeper.GameConfig
+import andy.zhu.minesweeper.game.GameConfig
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.decompose.router.stack.StackNavigation
 import com.arkivanov.decompose.router.stack.childStack

@@ -1,4 +1,4 @@
-package andy.zhu.minesweeper
+package andy.zhu.minesweeper.game
 
 import kotlinx.serialization.Serializable
 

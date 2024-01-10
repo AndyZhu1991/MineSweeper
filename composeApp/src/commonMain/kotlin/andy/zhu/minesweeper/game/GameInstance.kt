@@ -1,4 +1,4 @@
-package andy.zhu.minesweeper
+package andy.zhu.minesweeper.game
 
 import androidx.compose.ui.unit.IntOffset
 import andy.zhu.minesweeper.extensions.combine
@@ -27,7 +27,7 @@ class GameInstance(
 
     private var timerJob: Job? = null
     private val timeSeconds = MutableStateFlow<Int>(0)
-    val timeString: StateFlow<String> = timeSeconds.map(coroutineScope, ::toTimeString)
+    val timeString: StateFlow<String> = timeSeconds.map(coroutineScope, Companion::toTimeString)
 
     private val openedCount = MutableStateFlow(0)
     private val flaggedCount = MutableStateFlow(0)
