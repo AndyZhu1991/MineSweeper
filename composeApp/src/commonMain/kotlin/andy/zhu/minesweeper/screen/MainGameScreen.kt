@@ -316,7 +316,9 @@ private fun SuccessDialog(
             Text("Congratulations!")
         },
         text = {
-            Column {
+            Column(
+                modifier = Modifier.width(280.dp),
+            ) {
                 gameWinInfo.records.forEachIndexed { index, recordItem ->
                     RankLine(index + 1, (recordItem.costTimeMillis / 1000).toInt(),
                         recordItem.timeStampMillis ,gameWinInfo.yourRank == index)
@@ -324,38 +326,6 @@ private fun SuccessDialog(
             }
         }
     )
-}
-
-@Composable
-private fun RankLine(order: Int, score: Int, timeStamp: Long, isCurrent: Boolean) {
-    Row(
-        verticalAlignment = Alignment.Bottom,
-        modifier = Modifier
-            .width(280.dp)
-            .then(
-                if (isCurrent)
-                    Modifier.background(MaterialTheme.colorScheme.inversePrimary, RoundedCornerShape(2.dp))
-                else
-                    Modifier
-            ),
-    ) {
-        Icon(
-            painterResource("numeric_$order.png"),
-            contentDescription = null,
-            modifier = Modifier.size(24.dp),
-        )
-        Text(
-            Instant.fromEpochMilliseconds(timeStamp).toLocalDateTime(TimeZone.currentSystemDefault()).date.toString(),
-            modifier = Modifier.padding(bottom = 1.5.dp),
-        )
-        Surface(
-            modifier = Modifier.weight(1f)
-        ) {}
-        Text(
-            "${score}s",
-            modifier = Modifier.padding(bottom = 1.5.dp, end = 3.dp),
-        )
-    }
 }
 
 @Composable

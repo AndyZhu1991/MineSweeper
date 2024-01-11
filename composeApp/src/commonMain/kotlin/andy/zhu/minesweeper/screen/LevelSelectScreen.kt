@@ -43,8 +43,6 @@ import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.painterResource
 
-private val levels = listOf(GameConfig.Easy, GameConfig.Medium, GameConfig.Hard, GameConfig.Extreme)
-
 private val pageSize: DpSize = DpSize(260.dp, 160.dp)
 private val pagePadding = 8.dp
 
@@ -105,11 +103,11 @@ fun LevelSelectScreen(component: LevelSelectScreenComponent) {
             val fullWidthPager = dpSize.width <= 420.dp
             val pagerWidth = if (fullWidthPager) dpSize.width else pageSize.width + pagePadding * 2
             val pagerState = rememberPagerState(pageCount = {
-                levels.size
+                gameConfigs.size
             })
             LaunchedEffect(pagerState) {
                 snapshotFlow { pagerState.currentPage }.collect {
-                    val currentConfig = levels[it]
+                    val currentConfig = gameConfigs[it]
                     if (!savedGames.containsKey(currentConfig.level)) {
                         savedGames[currentConfig.level] = getPlatform().settings.getObjectOrNull(currentConfig.saveKey())
                     }
@@ -122,18 +120,7 @@ fun LevelSelectScreen(component: LevelSelectScreenComponent) {
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 if (!fullWidthPager) {
-                    IconButton(
-                        onClick = {
-                            coroutineScope.launch {
-                                if (pagerState.canScrollBackward) {
-                                    pagerState.animateScrollToPage(pagerState.currentPage - 1)
-                                }
-                            }
-                        },
-                        enabled = pagerState.canScrollBackward,
-                    ) {
-                        Icon(painterResource("arrow_back.xml"), contentDescription = null)
-                    }
+                    PagerBackwardButton(coroutineScope, pagerState)
                 }
                 HorizontalPager(
                     state = pagerState,
@@ -145,21 +132,10 @@ fun LevelSelectScreen(component: LevelSelectScreenComponent) {
                     pageSize = PageSize.Fixed(pageSize.width),
                     pageSpacing = pagePadding,
                 ) {
-                    LevelCard(levels[it])
+                    LevelCard(gameConfigs[it])
                 }
                 if (!fullWidthPager) {
-                    IconButton(
-                        onClick = {
-                            coroutineScope.launch {
-                                if (pagerState.canScrollForward) {
-                                    pagerState.animateScrollToPage(pagerState.currentPage + 1)
-                                }
-                            }
-                        },
-                        enabled = pagerState.canScrollForward,
-                    ) {
-                        Icon(painterResource("arrow_forward.xml"), contentDescription = null)
-                    }
+                    PagerForwardButton(coroutineScope, pagerState)
                 }
             }
 
@@ -167,7 +143,7 @@ fun LevelSelectScreen(component: LevelSelectScreenComponent) {
 
             OutlinedButton(
                 onClick = {
-                    component.onLevelSelected(levels[pagerState.currentPage])
+                    component.onLevelSelected(gameConfigs[pagerState.currentPage])
                 },
                 modifier = Modifier.width(pageSize.width),
             ) {
@@ -181,7 +157,7 @@ fun LevelSelectScreen(component: LevelSelectScreenComponent) {
             ) {
                 OutlinedButton(
                     onClick = {
-                        savedGames[levels[pagerState.currentPage].level]?.let {
+                        savedGames[gameConfigs[pagerState.currentPage].level]?.let {
                             component.onGameResume(it)
                         }
                     },
@@ -274,7 +250,7 @@ fun BottomMenu(currentPage: Int, navigation: LevelSelectScreenComponent.Navigati
             }
         }
         Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
-            IconButton(onClick = { navigation.rank(levels[currentPage].level) }) {
+            IconButton(onClick = { navigation.rank(gameConfigs[currentPage].level) }) {
                 Icon(painterResource("list_numbered.xml"), contentDescription = null)
             }
         }

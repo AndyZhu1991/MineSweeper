@@ -3,9 +3,9 @@ package andy.zhu.minesweeper.game
 import androidx.compose.ui.unit.IntOffset
 import andy.zhu.minesweeper.extensions.combine
 import andy.zhu.minesweeper.extensions.map
-import andy.zhu.minesweeper.settings.RecordItem
-import andy.zhu.minesweeper.settings.getObject
-import andy.zhu.minesweeper.settings.putObject
+import andy.zhu.minesweeper.settings.RankItem
+import andy.zhu.minesweeper.settings.getRank
+import andy.zhu.minesweeper.settings.saveRank
 import getPlatform
 import kotlinx.coroutines.*
 
@@ -325,18 +325,17 @@ class GameInstance(
             return GameWinInfo(emptyList(), -1)
         }
 
-        val records: List<RecordItem> = getPlatform().settings.getObject(
-            "record-${gameConfig.name()}", emptyList())
-        val currentRecord = RecordItem(
+        val rank: List<RankItem> = getRank(gameConfig)
+        val currentRankItem = RankItem(
             Clock.System.now().toEpochMilliseconds(),
             timeMillis.value.toLong(),
         )
-        val newRecords = (listOf(currentRecord) + records)
+        val newRank = (listOf(currentRankItem) + rank)
             .sortedBy { it.costTimeMillis }
             .take(RECORD_KEEP_COUNT)
-        val currentRank = newRecords.indexOf(currentRecord)
-        getPlatform().settings.putObject("record-${gameConfig.name()}", newRecords)
-        return GameWinInfo(newRecords, currentRank)
+        val currentRank = newRank.indexOf(currentRankItem)
+        saveRank(gameConfig, newRank)
+        return GameWinInfo(newRank, currentRank)
     }
 
     fun save(): GameSave {
@@ -398,7 +397,7 @@ class GameInstance(
     }
 
     class GameWinInfo(
-        val records: List<RecordItem>,
+        val records: List<RankItem>,
         val yourRank: Int,
     )
 
