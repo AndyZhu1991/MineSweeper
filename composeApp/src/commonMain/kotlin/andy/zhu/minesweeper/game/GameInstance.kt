@@ -304,6 +304,23 @@ class GameInstance(
         return queue
     }
 
+    fun flagAllCanBeFlagged() {
+        positions()
+            .filter { status[it] == GridStatus.OPENED }
+            .filter { mineCount[it] > 0 }
+            .flatMap {
+                val neighbours = neighbours(it)
+                val notOpened = neighbours.count { status[it] == GridStatus.HIDDEN || status[it] == GridStatus.FLAGGED }
+                if (mineCount[it] == notOpened) {
+                    neighbours.filter { status[it] == GridStatus.HIDDEN }
+                } else {
+                    emptyList()
+                }
+            }
+            .toSet()
+            .forEach { switchStatus(it) }
+    }
+
     private fun startTimer() {
         if (timerJob == null) {
             timerJob = coroutineScope.launch {

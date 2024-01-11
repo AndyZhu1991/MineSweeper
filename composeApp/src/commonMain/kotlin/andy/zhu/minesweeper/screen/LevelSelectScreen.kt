@@ -72,6 +72,7 @@ fun LevelSelectScreen(component: LevelSelectScreenComponent) {
                     val mineCount = mineMapHeight * mineMapWidth / 8
                     GameInstance(GameConfig.Custom(mineMapWidth, mineMapHeight, mineCount), coroutineScope).apply {
                         onMineTap(Position(mineMapWidth / 2, mineMapHeight / 2))
+                        flagAllCanBeFlagged()
                         onPause()
                     }
                 }
