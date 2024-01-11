@@ -14,6 +14,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PageSize
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -187,6 +190,10 @@ fun LevelSelectScreen(component: LevelSelectScreenComponent) {
                     Text("Resume")
                 }
             }
+
+            Spacer(Modifier.weight(1f))
+
+            BottomMenu(pagerState.currentPage, component.navigation)
         }
 
         Spacer(Modifier.windowInsetsBottomHeight(WindowInsets.systemBars))
@@ -243,6 +250,32 @@ private fun LevelCard(gameConfig: GameConfig) {
                     modifier = Modifier.padding(start = 4.dp),
                     style = MaterialTheme.typography.bodyLarge,
                 )
+            }
+        }
+    }
+}
+
+@Composable
+fun BottomMenu(currentPage: Int, navigation: LevelSelectScreenComponent.Navigation) {
+    Row(Modifier.width(320.dp).padding(bottom = 16.dp)) {
+        Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+            IconButton(onClick = navigation::settings) {
+                Icon(Icons.Default.Settings, contentDescription = null)
+            }
+        }
+        Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+            IconButton(onClick = navigation::about) {
+                Icon(Icons.Default.Info, contentDescription = null)
+            }
+        }
+        Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+            IconButton(onClick = navigation::palette) {
+                Icon(painterResource("palette.xml"), contentDescription = null)
+            }
+        }
+        Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+            IconButton(onClick = { navigation.rank(levels[currentPage].level) }) {
+                Icon(painterResource("list_numbered.xml"), contentDescription = null)
             }
         }
     }

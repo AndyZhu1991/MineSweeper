@@ -7,15 +7,23 @@ import getPlatform
 
 class LevelSelectScreenComponent(
     componentContext: ComponentContext,
-    private val startGame: (GameConfig) -> Unit,
-    private val resumeGame: (GameSave) -> Unit,
+    val navigation: Navigation,
 ) : ComponentContext by componentContext {
     
     fun onLevelSelected(level: GameConfig) {
-        startGame(if (getPlatform().isLandscape) level.rotate() else level)
+        navigation.startGame(if (getPlatform().isLandscape) level.rotate() else level)
     }
 
     fun onGameResume(gameSave: GameSave) {
-        resumeGame(gameSave)
+        navigation.resumeGame(gameSave)
+    }
+
+    interface Navigation {
+        fun startGame(level: GameConfig)
+        fun resumeGame(gameSave: GameSave)
+        fun settings()
+        fun palette()
+        fun rank(currentLevel: GameConfig.Level)
+        fun about()
     }
 }

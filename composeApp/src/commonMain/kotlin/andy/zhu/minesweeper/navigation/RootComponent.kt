@@ -30,12 +30,7 @@ class RootComponent(
             Config.LevelSelectScreen -> {
                 Child.LevelSelectScreen(LevelSelectScreenComponent(
                     componentContext = context,
-                    startGame = { level ->
-                        navigation.push(Config.MainGameScreen(level))
-                    },
-                    resumeGame = { gameSave ->
-                        navigation.push(Config.MainGameScreenFromSave(gameSave))
-                    },
+                    LevelSelectNavigation(),
                 ))
             }
             is Config.MainGameScreen -> {
@@ -52,12 +47,41 @@ class RootComponent(
                     navigation::pop,
                 ))
             }
+            Config.AboutScreen -> {
+                Child.AboutScreen(AboutScreenComponent(
+                    componentContext = context,
+                    navigation::pop,
+                ))
+            }
+            Config.PaletteScreen -> {
+                Child.PaletteScreen(PaletteScreenComponent(
+                    componentContext = context,
+                    navigation::pop,
+                ))
+            }
+            is Config.RankScreen -> {
+                Child.RankScreen(RankScreenComponent(
+                    componentContext = context,
+                    currentLevel = config.currentLevel,
+                    navigation::pop,
+                ))
+            }
+            Config.SettingsScreen -> {
+                Child.SettingsScreen(SettingsScreenComponent(
+                    componentContext = context,
+                    navigation::pop,
+                ))
+            }
         }
     }
     
     sealed class Child {
         data class LevelSelectScreen(val component: LevelSelectScreenComponent): Child()
         data class MainGameScreen(val component: MainGameScreenComponent): Child()
+        data class AboutScreen(val component: AboutScreenComponent): Child()
+        data class PaletteScreen(val component: PaletteScreenComponent): Child()
+        data class RankScreen(val component: RankScreenComponent): Child()
+        data class SettingsScreen(val component: SettingsScreenComponent): Child()
     }
     
     @Serializable
@@ -70,5 +94,43 @@ class RootComponent(
 
         @Serializable
         data class MainGameScreenFromSave(val gameSave: GameSave): Config()
+
+        @Serializable
+        data object AboutScreen : Config()
+
+        @Serializable
+        data object PaletteScreen : Config()
+
+        @Serializable
+        data class RankScreen(val currentLevel: GameConfig.Level) : Config()
+
+        @Serializable
+        data object SettingsScreen : Config()
+    }
+
+    private inner class LevelSelectNavigation: LevelSelectScreenComponent.Navigation {
+        override fun startGame(level: GameConfig) {
+            navigation.push(Config.MainGameScreen(level))
+        }
+
+        override fun resumeGame(gameSave: GameSave) {
+            navigation.push(Config.MainGameScreenFromSave(gameSave))
+        }
+
+        override fun settings() {
+            navigation.push(Config.SettingsScreen)
+        }
+
+        override fun palette() {
+            navigation.push(Config.PaletteScreen)
+        }
+
+        override fun rank(currentLevel: GameConfig.Level) {
+            navigation.push(Config.RankScreen(currentLevel))
+        }
+
+        override fun about() {
+            navigation.push(Config.AboutScreen)
+        }
     }
 }
