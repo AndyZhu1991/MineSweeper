@@ -13,7 +13,9 @@ object IOSPlatform: Platform {
 
     override val isMobile: Boolean = true
 
-    override val settings: Settings = NSUserDefaultsSettings.Factory().create()
+    override fun getPreference(name: String?): Settings {
+        return NSUserDefaultsSettings.Factory().create(name)
+    }
 }
 
 actual fun getPlatform(): Platform = IOSPlatform

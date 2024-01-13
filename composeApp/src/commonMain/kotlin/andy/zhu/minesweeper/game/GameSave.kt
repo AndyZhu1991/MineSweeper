@@ -20,10 +20,6 @@ class GameSave(
         splitToIntList(flagged)
     }
 
-    fun gameSaveKey(): String {
-        return gameConfig.saveKey()
-    }
-
     companion object {
         fun fromGameInstance(
             config: GameConfig,
@@ -48,10 +44,6 @@ class GameSave(
                 flaggedPositions.joinToString(","),
                 timeMillis,
             )
-        }
-
-        fun GameConfig.saveKey(): String {
-            return "game_save_${name()}"
         }
 
         private fun splitToIntList(str: String): List<Int> {

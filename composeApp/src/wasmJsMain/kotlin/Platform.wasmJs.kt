@@ -12,7 +12,9 @@ object WasmPlatform: Platform {
 
     override val isMobile: Boolean = false
 
-    override val settings: Settings = StorageSettings()
+    override fun getPreference(name: String?): Settings {
+        return StorageSettings()
+    }
 }
 
 actual fun getPlatform(): Platform = WasmPlatform

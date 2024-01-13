@@ -2,16 +2,23 @@ package andy.zhu.minesweeper.navigation
 
 import andy.zhu.minesweeper.game.GameConfig
 import andy.zhu.minesweeper.game.GameSave
+import andy.zhu.minesweeper.settings.getColorSchemeName
+import andy.zhu.minesweeper.settings.saveColorSchemeName
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.decompose.router.stack.StackNavigation
 import com.arkivanov.decompose.router.stack.childStack
 import com.arkivanov.decompose.router.stack.pop
 import com.arkivanov.decompose.router.stack.push
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.serialization.Serializable
 
 class RootComponent(
     componentContext: ComponentContext
 ) : ComponentContext by componentContext {
+
+    private val _colorSchemeName = MutableStateFlow(getColorSchemeName())
+    val colorSchemeName: StateFlow<String> = _colorSchemeName
     
     private val navigation = StackNavigation<Config>()
     val childStack = childStack(
@@ -21,6 +28,11 @@ class RootComponent(
         handleBackButton = true,
         childFactory = ::createChild,
     )
+
+    fun onColorSchemeChanged(schemeName: String) {
+        _colorSchemeName.value = schemeName
+        saveColorSchemeName(schemeName)
+    }
     
     private fun createChild(
         config: Config,
@@ -57,6 +69,7 @@ class RootComponent(
                 Child.PaletteScreen(PaletteScreenComponent(
                     componentContext = context,
                     navigation::pop,
+                    ::onColorSchemeChanged,
                 ))
             }
             is Config.RankScreen -> {

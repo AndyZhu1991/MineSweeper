@@ -3,14 +3,12 @@ package andy.zhu.minesweeper.navigation
 import andy.zhu.minesweeper.game.GameConfig
 import andy.zhu.minesweeper.game.GameInstance
 import andy.zhu.minesweeper.game.GameSave
-import andy.zhu.minesweeper.game.GameSave.Companion.saveKey
-import andy.zhu.minesweeper.settings.putObject
+import andy.zhu.minesweeper.settings.removeGameSave
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.essenty.lifecycle.coroutines.coroutineScope
 import com.arkivanov.essenty.lifecycle.doOnDestroy
 import com.arkivanov.essenty.lifecycle.doOnPause
 import com.arkivanov.essenty.lifecycle.doOnResume
-import getPlatform
 import io.github.aakira.napier.Napier
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -47,15 +45,15 @@ class MainGameScreenComponent(
 
     private fun saveGame() {
         if (!gameInstance.value.gameStarted.value || gameInstance.value.gameEnd.value) {
-            getPlatform().settings.remove(gameInstance.value.gameConfig.saveKey())
+            removeGameSave(gameInstance.value.gameConfig.level)
         } else {
-            getPlatform().settings.putObject(
-                gameInstance.value.gameConfig.saveKey(), gameInstance.value.save())
+            andy.zhu.minesweeper.settings.saveGame(
+                gameInstance.value.gameConfig.level, gameInstance.value.save())
         }
     }
 
     fun onRefresh() {
-        getPlatform().settings.remove(gameInstance.value.gameConfig.saveKey())
+        removeGameSave(gameInstance.value.gameConfig.level)
         gameInstance.value.onDestroy()
         gameInstance.value = GameInstance(gameConfig, coroutineScope)
         Napier.i("Game refreshed.")

@@ -4,16 +4,20 @@
 
 package andy.zhu.minesweeper.screen
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -23,10 +27,17 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.unit.dp
+import andy.zhu.minesweeper.MineDrawConfig
+import andy.zhu.minesweeper.drawMines
 import andy.zhu.minesweeper.game.GameConfig
+import andy.zhu.minesweeper.game.GameInstance
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Instant
@@ -122,5 +133,37 @@ internal fun PagerForwardButton(
         enabled = pagerState.canScrollForward,
     ) {
         Icon(painterResource("arrow_forward.xml"), contentDescription = null)
+    }
+}
+
+@Composable
+internal fun PreviewMineMap(
+    mineMapWidth: Int,
+    mineMapHeight: Int,
+    coroutineScope: CoroutineScope,
+) {
+    val gameInstance = remember(mineMapWidth, mineMapHeight) {
+        val mineCount = mineMapHeight * mineMapWidth / 8
+        GameInstance(GameConfig.Custom(mineMapWidth, mineMapHeight, mineCount), coroutineScope).apply {
+            onMineTap(Position(mineMapWidth / 2, mineMapHeight / 2))
+            flagAllCanBeFlagged()
+            onPause()
+        }
+    }
+    val drawConfig = CreateDrawConfig()
+    Box(
+        modifier = Modifier.fillMaxWidth().height(MineDrawConfig.defaultMineSize * gameInstance.gameConfig.height)
+    ) {
+        Canvas(
+            modifier = Modifier.fillMaxWidth().height(MineDrawConfig.defaultMineSize * gameInstance.gameConfig.height)
+        ) {
+            drawMines(Matrix(), gameInstance.mapUIFlow.value, 0f, drawConfig)
+        }
+        Box(
+            modifier = Modifier.fillMaxSize().background(
+                Brush.verticalGradient(listOf(
+                Color.Transparent, Color.Transparent, Color.Transparent, MaterialTheme.colorScheme.surface
+            )))
+        )
     }
 }

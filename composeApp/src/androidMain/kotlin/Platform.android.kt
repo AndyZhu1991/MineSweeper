@@ -14,7 +14,9 @@ object AndroidPlatform : Platform {
 
     override val isMobile: Boolean = true
 
-    override val settings: Settings = SharedPreferencesSettings.Factory(MineApplication.instance).create()
+    override fun getPreference(name: String?): Settings {
+        return SharedPreferencesSettings.Factory(MineApplication.instance).create(name)
+    }
 }
 
 actual fun getPlatform(): Platform = AndroidPlatform

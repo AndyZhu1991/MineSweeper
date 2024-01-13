@@ -15,7 +15,9 @@ object JVMPlatform: Platform {
 
     override val isMobile: Boolean = false
 
-    override val settings: Settings = PreferencesSettings.Factory().create()
+    override fun getPreference(name: String?): Settings {
+        return PreferencesSettings.Factory().create()
+    }
 }
 
 actual fun getPlatform(): Platform = JVMPlatform

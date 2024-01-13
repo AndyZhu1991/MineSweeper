@@ -7,39 +7,58 @@ package andy.zhu.minesweeper.screen
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsBottomHeight
+import androidx.compose.foundation.layout.windowInsetsTopHeight
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PageSize
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedCard
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
-import andy.zhu.minesweeper.game.GameConfig
-import andy.zhu.minesweeper.game.GameInstance
 import andy.zhu.minesweeper.MineDrawConfig
-import andy.zhu.minesweeper.drawMines
+import andy.zhu.minesweeper.game.GameConfig
 import andy.zhu.minesweeper.game.GameSave
-import andy.zhu.minesweeper.game.GameSave.Companion.saveKey
 import andy.zhu.minesweeper.navigation.LevelSelectScreenComponent
-import andy.zhu.minesweeper.settings.getObjectOrNull
-import getPlatform
-import kotlinx.coroutines.launch
+import andy.zhu.minesweeper.settings.loadGame
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.painterResource
 
@@ -51,9 +70,9 @@ fun LevelSelectScreen(component: LevelSelectScreenComponent) {
     Column(
         modifier = Modifier.fillMaxSize(),
     ) {
-        var mainAreaSize: IntSize by remember { mutableStateOf(IntSize(1080, 1920)) }
+        var mainAreaSize: IntSize? by remember { mutableStateOf(null) }
         val dpSize = with(LocalDensity.current) {
-            mainAreaSize.toSize().toDpSize()
+            mainAreaSize?.toSize()?.toDpSize()
         }
 
         Column(
@@ -65,32 +84,10 @@ fun LevelSelectScreen(component: LevelSelectScreenComponent) {
         ) {
             val coroutineScope = rememberCoroutineScope()
 
-            if (dpSize.height >= 500.dp) {
-                val gameInstance = remember(mainAreaSize) {
-                    val mineMapWidth = kotlin.math.ceil(dpSize.width / MineDrawConfig.defaultMineSize).toInt()
-                    val mineMapHeight = (dpSize.height * 0.4f / MineDrawConfig.defaultMineSize).toInt()
-                    val mineCount = mineMapHeight * mineMapWidth / 8
-                    GameInstance(GameConfig.Custom(mineMapWidth, mineMapHeight, mineCount), coroutineScope).apply {
-                        onMineTap(Position(mineMapWidth / 2, mineMapHeight / 2))
-                        flagAllCanBeFlagged()
-                        onPause()
-                    }
-                }
-                val drawConfig = CreateDrawConfig()
-                Box(
-                    modifier = Modifier.fillMaxWidth().height(MineDrawConfig.defaultMineSize * gameInstance.gameConfig.height)
-                ) {
-                    Canvas(
-                        modifier = Modifier.fillMaxWidth().height(MineDrawConfig.defaultMineSize * gameInstance.gameConfig.height)
-                    ) {
-                        drawMines(Matrix(), gameInstance.mapUIFlow.value, 0f, drawConfig)
-                    }
-                    Box(
-                        modifier = Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(
-                            Color.Transparent, Color.Transparent, Color.Transparent, MaterialTheme.colorScheme.surface
-                        )))
-                    )
-                }
+            if (dpSize != null && dpSize.height >= 500.dp) {
+                val mineMapWidth = kotlin.math.ceil(dpSize.width / MineDrawConfig.defaultMineSize).toInt()
+                val mineMapHeight = (dpSize.height * 0.4f / MineDrawConfig.defaultMineSize).toInt()
+                PreviewMineMap(mineMapWidth, mineMapHeight, coroutineScope)
                 Spacer(Modifier.height(32.dp))
             } else {
                 Spacer(Modifier.windowInsetsTopHeight(WindowInsets.systemBars))
@@ -101,8 +98,9 @@ fun LevelSelectScreen(component: LevelSelectScreenComponent) {
             val savedGames = remember { mutableMapOf<GameConfig.Level, GameSave?>() }
             var showResumeButton by remember { mutableStateOf(false) }
 
-            val fullWidthPager = dpSize.width <= 420.dp
-            val pagerWidth = if (fullWidthPager) dpSize.width else pageSize.width + pagePadding * 2
+            val widthDp = dpSize?.width ?: 360.dp
+            val fullWidthPager = widthDp <= 420.dp
+            val pagerWidth = if (fullWidthPager) widthDp else pageSize.width + pagePadding * 2
             val pagerState = rememberPagerState(pageCount = {
                 gameConfigs.size
             })
@@ -110,7 +108,7 @@ fun LevelSelectScreen(component: LevelSelectScreenComponent) {
                 snapshotFlow { pagerState.currentPage }.collect {
                     val currentConfig = gameConfigs[it]
                     if (!savedGames.containsKey(currentConfig.level)) {
-                        savedGames[currentConfig.level] = getPlatform().settings.getObjectOrNull(currentConfig.saveKey())
+                        savedGames[currentConfig.level] = loadGame(currentConfig.level)
                     }
                     showResumeButton = savedGames[currentConfig.level] != null
                 }

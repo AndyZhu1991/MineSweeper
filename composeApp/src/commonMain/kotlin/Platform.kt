@@ -10,7 +10,7 @@ interface Platform {
     val name: String
     val isMobile: Boolean
     val isLandscape: Boolean get() { return isMobile }
-    val settings: Settings
+    fun getPreference(name: String? = null): Settings
 }
 
 expect fun getPlatform(): Platform
