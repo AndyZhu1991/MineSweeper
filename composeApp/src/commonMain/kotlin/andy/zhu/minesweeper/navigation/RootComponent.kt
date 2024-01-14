@@ -2,8 +2,11 @@ package andy.zhu.minesweeper.navigation
 
 import andy.zhu.minesweeper.game.GameConfig
 import andy.zhu.minesweeper.game.GameSave
+import andy.zhu.minesweeper.settings.getColorPreference
 import andy.zhu.minesweeper.settings.getColorSchemeName
+import andy.zhu.minesweeper.settings.saveColorPreference
 import andy.zhu.minesweeper.settings.saveColorSchemeName
+import andy.zhu.minesweeper.theme.color.ColorPreference
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.decompose.router.stack.StackNavigation
 import com.arkivanov.decompose.router.stack.childStack
@@ -19,6 +22,9 @@ class RootComponent(
 
     private val _colorSchemeName = MutableStateFlow(getColorSchemeName())
     val colorSchemeName: StateFlow<String> = _colorSchemeName
+
+    private val _colorPreference = MutableStateFlow(getColorPreference())
+    val colorPreference: StateFlow<ColorPreference> = _colorPreference
     
     private val navigation = StackNavigation<Config>()
     val childStack = childStack(
@@ -29,11 +35,16 @@ class RootComponent(
         childFactory = ::createChild,
     )
 
-    fun onColorSchemeChanged(schemeName: String) {
+    private fun onColorSchemeChanged(schemeName: String) {
         _colorSchemeName.value = schemeName
         saveColorSchemeName(schemeName)
     }
-    
+
+    private fun onColorPreferenceChanged(colorPreference: ColorPreference) {
+        _colorPreference.value = colorPreference
+        saveColorPreference(colorPreference)
+    }
+
     private fun createChild(
         config: Config,
         context: ComponentContext,
@@ -70,6 +81,7 @@ class RootComponent(
                     componentContext = context,
                     navigation::pop,
                     ::onColorSchemeChanged,
+                    ::onColorPreferenceChanged,
                 ))
             }
             is Config.RankScreen -> {

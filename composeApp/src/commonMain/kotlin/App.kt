@@ -17,8 +17,6 @@ import andy.zhu.minesweeper.screen.MainGameScreen
 import andy.zhu.minesweeper.screen.PaletteScreen
 import andy.zhu.minesweeper.screen.RankScreen
 import andy.zhu.minesweeper.screen.SettingsScreen
-import andy.zhu.minesweeper.settings.getFollowSystem
-import andy.zhu.minesweeper.settings.getPreferLight
 import andy.zhu.minesweeper.theme.color.ColorConfig
 import com.arkivanov.decompose.extensions.compose.stack.Children
 import com.arkivanov.decompose.extensions.compose.stack.animation.slide
@@ -28,12 +26,12 @@ import com.arkivanov.decompose.extensions.compose.subscribeAsState
 @Composable
 fun App(root: RootComponent) {
     val colorSchemeName by root.colorSchemeName.collectAsState()
+    val colorPreference by root.colorPreference.collectAsState()
     val isDarkTheme = isSystemInDarkTheme()
     val colorScheme = ColorConfig(
         colorSchemeName,
         isDarkTheme,
-        getFollowSystem(),
-        getPreferLight(),
+        colorPreference,
     ).resolveColorScheme()
 
     MaterialTheme(

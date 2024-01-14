@@ -3,6 +3,7 @@ package andy.zhu.minesweeper.settings
 import andy.zhu.minesweeper.game.GameConfig
 import andy.zhu.minesweeper.game.GameSave
 import andy.zhu.minesweeper.theme.color.ColorConfig
+import andy.zhu.minesweeper.theme.color.ColorPreference
 import getPlatform
 
 /**************************************************************************************************/
@@ -45,8 +46,7 @@ fun removeGameSave(level: GameConfig.Level) {
 
 private const val PREF_NAME_THEME = "theme"
 private const val PREF_KEY_COLOR_SCHEME_NAME = "color_scheme_name"
-private const val PREF_KEY_FOLLOW_SYSTEM = "follow_system"
-private const val PREF_KEY_PREFER_LIGHT = "prefer_light"
+private const val PREF_KEY_COLOR_PREFERENCE = "color_preference"
 
 fun getColorSchemeName(): String {
     return getPlatform().getPreference(PREF_NAME_THEME)
@@ -58,22 +58,12 @@ fun saveColorSchemeName(schemeName: String) {
         .putString(PREF_KEY_COLOR_SCHEME_NAME, schemeName)
 }
 
-fun getFollowSystem(): Boolean {
+fun getColorPreference(): ColorPreference {
     return getPlatform().getPreference(PREF_NAME_THEME)
-        .getBoolean(PREF_KEY_FOLLOW_SYSTEM, true)
+        .getObject(PREF_KEY_COLOR_PREFERENCE, ColorPreference.FollowSystem)
 }
 
-fun saveFollowSystem(followSystem: Boolean) {
+fun saveColorPreference(colorPreference: ColorPreference) {
     getPlatform().getPreference(PREF_NAME_THEME)
-        .putBoolean(PREF_KEY_FOLLOW_SYSTEM, followSystem)
-}
-
-fun getPreferLight(): Boolean {
-    return getPlatform().getPreference(PREF_NAME_THEME)
-        .getBoolean(PREF_KEY_PREFER_LIGHT, true)
-}
-
-fun savePreferLight(preferLight: Boolean) {
-    getPlatform().getPreference(PREF_NAME_THEME)
-        .putBoolean(PREF_KEY_PREFER_LIGHT, preferLight)
+        .putObject(PREF_KEY_COLOR_PREFERENCE, colorPreference)
 }
