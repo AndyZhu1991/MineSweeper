@@ -9,6 +9,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import andy.zhu.minesweeper.navigation.RootComponent
 import andy.zhu.minesweeper.screen.AboutScreen
 import andy.zhu.minesweeper.screen.LevelSelectScreen
@@ -69,9 +70,16 @@ class ThemedRippleTheme(
 
     @Composable
     override fun rippleAlpha(): RippleAlpha {
-        return when(isLight) {
-            true -> RippleAlpha(0.4f, 0.4f, 0.3f, 0.66f)
-            false -> RippleTheme.defaultRippleAlpha(rippleColor, false)
+        val rippleFactory = if (isLight) {
+            rippleColor.luminance()
+        } else {
+            (rippleColor.luminance() + 0.8f) / 1.8f
         }
+        return RippleAlpha(
+            0.4f * rippleFactory,
+            0.4f * rippleFactory,
+            0.3f * rippleFactory,
+            0.7f * rippleFactory,
+        )
     }
 }
