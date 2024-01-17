@@ -28,16 +28,20 @@ import androidx.compose.foundation.layout.windowInsetsTopHeight
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PageSize
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedCard
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -50,6 +54,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
@@ -58,11 +63,13 @@ import andy.zhu.minesweeper.MineDrawConfig
 import andy.zhu.minesweeper.game.GameConfig
 import andy.zhu.minesweeper.game.GameSave
 import andy.zhu.minesweeper.navigation.LevelSelectScreenComponent
+import andy.zhu.minesweeper.settings.getCustomGame
 import andy.zhu.minesweeper.settings.loadGame
+import andy.zhu.minesweeper.settings.saveCustomGame
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.painterResource
 
-private val pageSize: DpSize = DpSize(260.dp, 160.dp)
+private val pageSize: DpSize = DpSize(270.dp, 170.dp)
 private val pagePadding = 8.dp
 
 @Composable
@@ -95,6 +102,24 @@ fun LevelSelectScreen(component: LevelSelectScreenComponent) {
 
             Spacer(Modifier.height(16.dp))
 
+            var showCustomDialog by remember { mutableStateOf(false) }
+
+            var customGame by remember { mutableStateOf(
+                getCustomGame() ?: GameConfig.Custom(10, 10, 1)
+            ) }
+            if (showCustomDialog) {
+                CustomGameDialog(
+                    customGame,
+                    onDismiss = { showCustomDialog = false }
+                ) {
+                    customGame = it
+                    showCustomDialog = false
+                    saveCustomGame(it.width, it.height, it.mineCount)
+                }
+            }
+
+            val gameConfigs = gameConfigsWithOutCustom + listOf(customGame)
+
             val savedGames = remember { mutableMapOf<GameConfig.Level, GameSave?>() }
             var showResumeButton by remember { mutableStateOf(false) }
 
@@ -104,13 +129,18 @@ fun LevelSelectScreen(component: LevelSelectScreenComponent) {
             val pagerState = rememberPagerState(pageCount = {
                 gameConfigs.size
             })
-            LaunchedEffect(pagerState) {
+            LaunchedEffect(pagerState, customGame) {
                 snapshotFlow { pagerState.currentPage }.collect {
                     val currentConfig = gameConfigs[it]
                     if (!savedGames.containsKey(currentConfig.level)) {
                         savedGames[currentConfig.level] = loadGame(currentConfig.level)
                     }
-                    showResumeButton = savedGames[currentConfig.level] != null
+                    val gameSave = savedGames[currentConfig.level]
+                    showResumeButton = if (gameSave?.gameConfig?.level == GameConfig.Level.Custom) {
+                        gameSave.gameConfig == customGame
+                    } else {
+                        gameSave != null
+                    }
                 }
             }
             Row(
@@ -131,7 +161,7 @@ fun LevelSelectScreen(component: LevelSelectScreenComponent) {
                     pageSize = PageSize.Fixed(pageSize.width),
                     pageSpacing = pagePadding,
                 ) {
-                    LevelCard(gameConfigs[it])
+                    LevelCard(gameConfigs[it]) { showCustomDialog = true }
                 }
                 if (!fullWidthPager) {
                     PagerForwardButton(coroutineScope, pagerState)
@@ -156,9 +186,13 @@ fun LevelSelectScreen(component: LevelSelectScreenComponent) {
             ) {
                 OutlinedButton(
                     onClick = {
-                        savedGames[gameConfigs[pagerState.currentPage].level]?.let {
-                            component.onGameResume(it)
+                        val gameSave = savedGames[gameConfigs[pagerState.currentPage].level] ?: return@OutlinedButton
+                        if (gameSave.gameConfig.level == GameConfig.Level.Custom) {
+                            if (gameSave.gameConfig != customGame) {
+                                return@OutlinedButton
+                            }
                         }
+                        component.onGameResume(gameSave)
                     },
                     modifier = Modifier.width(pageSize.width),
                 ) {
@@ -168,7 +202,7 @@ fun LevelSelectScreen(component: LevelSelectScreenComponent) {
 
             Spacer(Modifier.weight(1f))
 
-            BottomMenu(pagerState.currentPage, component.navigation)
+            BottomMenu(gameConfigs[pagerState.currentPage].level, component.navigation)
         }
 
         Spacer(Modifier.windowInsetsBottomHeight(WindowInsets.systemBars))
@@ -176,7 +210,7 @@ fun LevelSelectScreen(component: LevelSelectScreenComponent) {
 }
 
 @Composable
-private fun LevelCard(gameConfig: GameConfig) {
+private fun LevelCard(gameConfig: GameConfig, onCustom: () -> Unit) {
     OutlinedCard(
         modifier = Modifier.size(pageSize),
     ) {
@@ -186,7 +220,7 @@ private fun LevelCard(gameConfig: GameConfig) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(85.dp)
+                    .height(90.dp)
                     .background(MaterialTheme.colorScheme.primaryContainer),
             ) {
                 Text(
@@ -199,16 +233,30 @@ private fun LevelCard(gameConfig: GameConfig) {
                 )
             }
             Box(
-                modifier = Modifier.weight(1f).padding(start = 16.dp),
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+                    .padding(start = 16.dp),
             ) {
                 Text(
                     gameConfig.shortDesc,
                     modifier = Modifier.align(Alignment.CenterStart),
                     style = MaterialTheme.typography.titleMedium,
                 )
+                if (gameConfig.level == GameConfig.Level.Custom) {
+                    IconButton(
+                        onClick = onCustom,
+                        modifier = Modifier.align(Alignment.CenterEnd),
+                    ) {
+                        Icon(
+                            painterResource("tune.xml"),
+                            contentDescription = null,
+                        )
+                    }
+                }
             }
             Row(
-                modifier = Modifier.height(35.dp).padding(horizontal = 16.dp),
+                modifier = Modifier.height(38.dp).padding(horizontal = 16.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
@@ -231,7 +279,7 @@ private fun LevelCard(gameConfig: GameConfig) {
 }
 
 @Composable
-fun BottomMenu(currentPage: Int, navigation: LevelSelectScreenComponent.Navigation) {
+fun BottomMenu(currentLevel: GameConfig.Level, navigation: LevelSelectScreenComponent.Navigation) {
     Row(Modifier.width(320.dp).padding(bottom = 16.dp)) {
         Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
             IconButton(onClick = navigation::settings) {
@@ -249,9 +297,104 @@ fun BottomMenu(currentPage: Int, navigation: LevelSelectScreenComponent.Navigati
             }
         }
         Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
-            IconButton(onClick = { navigation.rank(gameConfigs[currentPage].level) }) {
+            IconButton(onClick = { navigation.rank(currentLevel) }) {
                 Icon(painterResource("list_numbered.xml"), contentDescription = null)
             }
         }
     }
 }
+
+private const val MIN_MAP_SIZE = 3
+private const val MAX_MAP_SIZE = 100
+
+@Composable
+fun CustomGameDialog(
+    gameConfig: GameConfig,
+    onDismiss: () -> Unit,
+    onConfirm: (GameConfig) -> Unit,
+) {
+    var width by remember { mutableStateOf(gameConfig.width.toString()) }
+    var height by remember { mutableStateOf(gameConfig.height.toString()) }
+    var mineCount by remember { mutableStateOf(gameConfig.mineCount.toString()) }
+
+    val isWidthError = width.toIntOrNull() !in MIN_MAP_SIZE..MAX_MAP_SIZE
+    val isHeightError = height.toIntOrNull() !in MIN_MAP_SIZE..MAX_MAP_SIZE
+    val isMineCountError = if (isWidthError || isHeightError) {
+        false
+    } else {
+        val intCount = mineCount.toIntOrNull()
+        if (intCount == null) {
+            true
+        } else {
+            intCount !in 1..(width.toInt() * height.toInt() / 2)
+        }
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Custom Game") },
+        text = {
+            Column {
+                OutlinedTextField(
+                    value = width,
+                    label = { Text("Width") },
+                    singleLine = true,
+                    isError = isWidthError,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    onValueChange = {
+                        if (it.all(Char::isDigit) && it.length <= 4) {
+                            width = it
+                        }
+                    },
+                )
+                Spacer(Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = height,
+                    label = { Text("Height") },
+                    singleLine = true,
+                    isError = isHeightError,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    onValueChange = {
+                        if (it.all(Char::isDigit) && it.length <= 4) {
+                            height = it
+                        }
+                    }
+                )
+                Spacer(Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = mineCount,
+                    label = { Text("Mine count") },
+                    singleLine = true,
+                    isError = isMineCountError,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    onValueChange = {
+                        if (it.all(Char::isDigit) && it.length <= 4) {
+                            mineCount = it
+                        }
+                    }
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                enabled = !isWidthError && !isHeightError && !isMineCountError,
+                onClick = {
+                    onConfirm(
+                        GameConfig.Custom(width.toInt(), height.toInt(), mineCount.toInt())
+                    )
+                    onDismiss()
+                },
+            ) {
+                Text("Confirm")
+            }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = onDismiss,
+            ) {
+                Text("Cancel")
+            }
+        },
+    )
+}
+

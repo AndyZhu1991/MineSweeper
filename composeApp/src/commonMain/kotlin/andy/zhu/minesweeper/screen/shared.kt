@@ -46,8 +46,7 @@ import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.painterResource
 
-internal val gameConfigs = listOf(GameConfig.Easy, GameConfig.Medium, GameConfig.Hard, GameConfig.Extreme)
-internal val gameConfigsWithOutCustom = gameConfigs.filter { it.level != GameConfig.Level.Custom }
+internal val gameConfigsWithOutCustom = listOf(GameConfig.Easy, GameConfig.Medium, GameConfig.Hard, GameConfig.Extreme)
 
 @Composable
 internal fun RankLine(order: Int, score: Int, timeStamp: Long, isCurrent: Boolean) {

@@ -97,3 +97,34 @@ fun saveDefaultAction(defaultAction: SettingsScreenComponent.DefaultAction) {
     getPlatform().getPreference(PREF_NAME_SETTINGS)
         .putObject(PREF_KEY_DEFAULT_ACTION, defaultAction)
 }
+
+
+/**************************************************************************************************/
+// Custom game
+/**************************************************************************************************/
+
+private const val PREF_NAME_CUSTOM_GAME = "custom_game"
+private const val PREF_KEY_WIDTH = "width"
+private const val PREF_KEY_HEIGHT = "height"
+private const val PREF_KEY_MINE_COUNT = "mine_count"
+
+fun saveCustomGame(width: Int, height: Int, mineCount: Int) {
+    getPlatform().getPreference(PREF_NAME_CUSTOM_GAME).run {
+        putInt(PREF_KEY_WIDTH, width)
+        putInt(PREF_KEY_HEIGHT, height)
+        putInt(PREF_KEY_MINE_COUNT, mineCount)
+    }
+}
+
+fun getCustomGame(): GameConfig? {
+    return getPlatform().getPreference(PREF_NAME_CUSTOM_GAME).run {
+        val width = getInt(PREF_KEY_WIDTH, -1)
+        val height = getInt(PREF_KEY_HEIGHT, -1)
+        val mineCount = getInt(PREF_KEY_MINE_COUNT, -1)
+        if (width > 0 && height > 0 && mineCount > 0) {
+            GameConfig.Custom(width, height, mineCount)
+        } else {
+            null
+        }
+    }
+}

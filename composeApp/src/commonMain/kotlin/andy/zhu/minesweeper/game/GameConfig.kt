@@ -3,7 +3,7 @@ package andy.zhu.minesweeper.game
 import kotlinx.serialization.Serializable
 
 @Serializable
-class GameConfig(
+data class GameConfig(
     val width: Int,
     val height: Int,
     val mineCount: Int,
