@@ -3,8 +3,11 @@ package andy.zhu.minesweeper.game
 import androidx.compose.ui.unit.IntOffset
 import andy.zhu.minesweeper.extensions.combine
 import andy.zhu.minesweeper.extensions.map
+import andy.zhu.minesweeper.navigation.SettingsScreenComponent
 import andy.zhu.minesweeper.settings.RankItem
+import andy.zhu.minesweeper.settings.getDefaultAction
 import andy.zhu.minesweeper.settings.getRank
+import andy.zhu.minesweeper.settings.getShowActionToggle
 import andy.zhu.minesweeper.settings.saveRank
 import getPlatform
 import kotlinx.coroutines.*
@@ -39,9 +42,11 @@ class GameInstance(
 
     val minesRemainingText = minesRemaining.map(coroutineScope) { it.toString() }
 
-    val showFab = getPlatform().isMobile
-    private val _flagWhenTap = MutableStateFlow(getPlatform().isMobile)  // Flag the grid when tap
-    val flagWhenTap: StateFlow<Boolean> = _flagWhenTap
+    val showFab = getShowActionToggle()
+    private val fabDefaultAction = MutableStateFlow(getDefaultAction())
+    val flagWhenTap: StateFlow<Boolean> = fabDefaultAction.map(coroutineScope) {
+        it == SettingsScreenComponent.DefaultAction.Flag
+    }
 
     val gameStarted = openedCount.map(coroutineScope) { it > 0 }
 
@@ -144,7 +149,10 @@ class GameInstance(
     }
 
     fun switchTapAction() {
-        _flagWhenTap.value = !_flagWhenTap.value
+        fabDefaultAction.value = when (fabDefaultAction.value) {
+            SettingsScreenComponent.DefaultAction.Flag -> SettingsScreenComponent.DefaultAction.Dig
+            SettingsScreenComponent.DefaultAction.Dig -> SettingsScreenComponent.DefaultAction.Flag
+        }
     }
 
     private fun indexToPosition(index: Int): Position {

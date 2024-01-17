@@ -2,6 +2,7 @@ package andy.zhu.minesweeper.settings
 
 import andy.zhu.minesweeper.game.GameConfig
 import andy.zhu.minesweeper.game.GameSave
+import andy.zhu.minesweeper.navigation.SettingsScreenComponent
 import andy.zhu.minesweeper.theme.color.ColorConfig
 import andy.zhu.minesweeper.theme.color.ColorPreference
 import getPlatform
@@ -66,4 +67,33 @@ fun getColorPreference(): ColorPreference {
 fun saveColorPreference(colorPreference: ColorPreference) {
     getPlatform().getPreference(PREF_NAME_THEME)
         .putObject(PREF_KEY_COLOR_PREFERENCE, colorPreference)
+}
+
+
+/**************************************************************************************************/
+// Settings
+/**************************************************************************************************/
+
+private const val PREF_NAME_SETTINGS = "settings"
+private const val PREF_KEY_SHOW_ACTION_TOGGLE = "show_action_toggle"
+private const val PREF_KEY_DEFAULT_ACTION = "default_action"
+
+fun getShowActionToggle(): Boolean {
+    return getPlatform().getPreference(PREF_NAME_SETTINGS)
+        .getBoolean(PREF_KEY_SHOW_ACTION_TOGGLE, getPlatform().isMobile)
+}
+
+fun saveShowActionToggle(show: Boolean) {
+    getPlatform().getPreference(PREF_NAME_SETTINGS)
+        .putBoolean(PREF_KEY_SHOW_ACTION_TOGGLE, show)
+}
+
+fun getDefaultAction(): SettingsScreenComponent.DefaultAction {
+    return getPlatform().getPreference(PREF_NAME_SETTINGS)
+        .getObject(PREF_KEY_DEFAULT_ACTION, SettingsScreenComponent.DefaultAction.Flag)
+}
+
+fun saveDefaultAction(defaultAction: SettingsScreenComponent.DefaultAction) {
+    getPlatform().getPreference(PREF_NAME_SETTINGS)
+        .putObject(PREF_KEY_DEFAULT_ACTION, defaultAction)
 }
