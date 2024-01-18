@@ -9,12 +9,15 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.pager.PagerState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -30,6 +33,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Matrix
@@ -60,21 +64,31 @@ internal fun RankLine(order: Int, score: Int, timeStamp: Long, isCurrent: Boolea
                     Modifier
             ),
     ) {
-        Icon(
-            painterResource("numeric_$order.png"),
-            contentDescription = null,
-            modifier = Modifier.size(24.dp),
-        )
+        Box(modifier = Modifier.size(24.dp)) {
+            Icon(
+                painterResource("numeric_$order.png"),
+                contentDescription = null,
+                modifier = Modifier.size(24.dp),
+            )
+            Box(
+                modifier = Modifier.fillMaxSize().padding(end = 1.dp, bottom = 4.5.dp)
+            ) {
+                Box(Modifier
+                    .size(2.dp)
+                    .clip(CircleShape)
+                    .align(Alignment.BottomEnd)
+                    .background(MaterialTheme.colorScheme.onSurface)
+                )
+            }
+        }
         Text(
             Instant.fromEpochMilliseconds(timeStamp).toLocalDateTime(TimeZone.currentSystemDefault()).date.toString(),
-            modifier = Modifier.padding(bottom = 1.5.dp),
+            modifier = Modifier.padding(start = 4.dp, bottom = 0.5.dp),
         )
-        Surface(
-            modifier = Modifier.weight(1f)
-        ) {}
+        Spacer(modifier = Modifier.weight(1f))
         Text(
             "${score}s",
-            modifier = Modifier.padding(bottom = 1.5.dp, end = 3.dp),
+            modifier = Modifier.padding(bottom = 0.5.dp, end = 3.dp),
         )
     }
 }

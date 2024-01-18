@@ -7,7 +7,9 @@ package andy.zhu.minesweeper.screen
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
@@ -59,7 +61,9 @@ fun RankScreen(component: RankScreenComponent) {
                     .padding(top = 16.dp),
             ) { page ->
                 val rank = getRank(gameConfigsWithOutCustom[page])
-                Column {
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                ) {
                     rank.forEachIndexed { index, rankItem ->
                         RankLine(
                             index + 1,
@@ -67,6 +71,7 @@ fun RankScreen(component: RankScreenComponent) {
                             rankItem.timeStampMillis,
                             false
                         )
+                        Spacer(Modifier.height(4.dp))
                     }
                 }
             }
