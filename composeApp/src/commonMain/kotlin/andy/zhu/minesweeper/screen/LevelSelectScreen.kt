@@ -280,6 +280,11 @@ private fun LevelCard(gameConfig: GameConfig, onCustom: () -> Unit) {
 
 @Composable
 fun BottomMenu(currentLevel: GameConfig.Level, navigation: LevelSelectScreenComponent.Navigation) {
+    var showAboutDialog by remember { mutableStateOf(false) }
+    if (showAboutDialog) {
+        AboutDialog { showAboutDialog = false }
+    }
+
     Row(Modifier.width(320.dp).padding(bottom = 16.dp)) {
         Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
             IconButton(onClick = navigation::settings) {
@@ -287,7 +292,7 @@ fun BottomMenu(currentLevel: GameConfig.Level, navigation: LevelSelectScreenComp
             }
         }
         Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
-            IconButton(onClick = navigation::about) {
+            IconButton(onClick = { showAboutDialog = true }) {
                 Icon(Icons.Default.Info, contentDescription = null)
             }
         }
@@ -398,3 +403,18 @@ fun CustomGameDialog(
     )
 }
 
+@Composable
+fun AboutDialog(onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {},
+        text = { AboutContent() },
+        confirmButton = {
+            TextButton(
+                onClick = onDismiss,
+            ) {
+                Text("OK")
+            }
+        },
+    )
+}
