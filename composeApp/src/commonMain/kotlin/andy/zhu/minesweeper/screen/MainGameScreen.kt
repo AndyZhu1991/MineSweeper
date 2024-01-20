@@ -9,7 +9,6 @@ import androidx.compose.animation.core.TwoWayConverter
 import androidx.compose.animation.core.VectorConverter
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Column
@@ -22,7 +21,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Refresh
@@ -34,7 +32,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
@@ -59,7 +56,6 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
-import andy.zhu.minesweeper.game.GameInstance
 import andy.zhu.minesweeper.MineCanvasColor
 import andy.zhu.minesweeper.MineDrawConfig
 import andy.zhu.minesweeper.drawMines
@@ -68,10 +64,8 @@ import andy.zhu.minesweeper.extensions.scale
 import andy.zhu.minesweeper.extensions.scaleX
 import andy.zhu.minesweeper.extensions.scaleY
 import andy.zhu.minesweeper.extensions.transformed
+import andy.zhu.minesweeper.game.GameInstance
 import andy.zhu.minesweeper.navigation.MainGameScreenComponent
-import kotlinx.datetime.Instant
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toLocalDateTime
 import mousePointerMatcher
 import onPointerEvent
 import org.jetbrains.compose.resources.ExperimentalResourceApi
@@ -435,26 +429,31 @@ fun CreateDrawConfig(): MineDrawConfig {
 private fun calcInitMatrix(mineSize: Size, width: Int, height: Int, contentInner: Rect): Matrix {
     val minesSize = Size(mineSize.width * width, mineSize.height * height)
 
-    val targetRect = if (minesSize.width < contentInner.width && minesSize.height < contentInner.height) {
-        Rect(Offset((contentInner.width - minesSize.width) / 2 + contentInner.left,
-            (contentInner.height - minesSize.height) / 2 + contentInner.top), minesSize)
+    val targetSize = if (minesSize.width < contentInner.width && minesSize.height < contentInner.height) {
+        minesSize
     } else {
         val minesRatio = minesSize.width / minesSize.height
         val contentRatio = contentInner.width / contentInner.height
         if (minesRatio < contentRatio) {
             val targetHeight = contentInner.height
             val targetWidth = minesRatio * targetHeight
-            val offsetX = (contentInner.width - targetWidth) / 2 + contentInner.left
-            val offsetY = contentInner.top
-            Rect(Offset(offsetX, offsetY), Size(targetWidth, targetHeight))
+            Size(targetWidth, targetHeight)
         } else {
             val targetWidth = contentInner.width
             val targetHeight = targetWidth / minesRatio
-            val offsetX = contentInner.left
-            val offsetY = (contentInner.height - targetHeight) / 2 + contentInner.top
-            Rect(Offset(offsetX, offsetY), Size(targetWidth, targetHeight))
+            Size(targetWidth, targetHeight)
+        }
+    }.let {
+        if (it.width / minesSize.width < MIN_SCALE) {
+            Size(minesSize.width * MIN_SCALE, minesSize.height * MIN_SCALE)
+        } else {
+            it
         }
     }
+
+    val offset = Offset((contentInner.width - targetSize.width) / 2 + contentInner.left,
+                     (contentInner.height - targetSize.height) / 2 + contentInner.top)
+    val targetRect = Rect(offset, targetSize)
 
     val translateX = targetRect.left
     val translateY = targetRect.top
