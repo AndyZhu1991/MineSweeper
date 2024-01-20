@@ -8,6 +8,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.Matrix
+import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.translate
@@ -20,7 +21,10 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import andy.zhu.minesweeper.extensions.inverted
+import andy.zhu.minesweeper.extensions.scaleX
 import andy.zhu.minesweeper.extensions.transform
+import andy.zhu.minesweeper.extensions.translateX
+import andy.zhu.minesweeper.extensions.translateY
 import andy.zhu.minesweeper.game.GameInstance
 
 
@@ -133,10 +137,11 @@ private fun DrawScope.drawItemBorderAndBg(
     withTransform(
         transformBlock = { transform(transform) }
     ) {
+        val mineSizePx = drawConfig.mineSize.toPx()
         val innerSize = Size(drawConfig.borderRectSize.toPx(), drawConfig.borderRectSize.toPx())
         val fillCorner = CornerRadius(drawConfig.mineCorner.toPx())
         for (y in top..bottom) { for (x in left..right) {
-            val offset = Offset(x * drawConfig.mineSize.toPx(), y * drawConfig.mineSize.toPx())
+            val offset = Offset(x * mineSizePx, y * mineSizePx)
             val paddingOffset = offset + Offset(drawConfig.padding.toPx(), drawConfig.padding.toPx())
             when(map.getItemUI(y, x)) {
                 GameInstance.MineItemUI.Hidden -> drawConfig.colors.hiddenFill
@@ -156,20 +161,61 @@ private fun DrawScope.drawItemBorderAndBg(
             }?.let { fillColor ->
                 drawRoundRect(fillColor, paddingOffset, innerSize, fillCorner)
             }
-
-            if (x + 1 < map.width && map.getItemUI(y, x) is GameInstance.MineItemUI.Opened
-                    && map.getItemUI(y, x+1) is GameInstance.MineItemUI.Opened) {
-                val start = Offset(drawConfig.mineSize.toPx(), drawConfig.mineCorner.toPx()) + offset
-                val end = Offset(drawConfig.mineSize.toPx(), drawConfig.mineSize.toPx() - drawConfig.mineCorner.toPx()) + offset
-                drawLine(drawConfig.colors.hiddenFill, start, end, drawConfig.borderWidth.toPx())
-            }
-            if (y + 1 < map.height && map.getItemUI(y, x) is GameInstance.MineItemUI.Opened
-                    && map.getItemUI(y+1, x) is GameInstance.MineItemUI.Opened) {
-                val start = Offset(drawConfig.mineCorner.toPx(), drawConfig.mineSize.toPx()) + offset
-                val end = Offset(drawConfig.mineSize.toPx() - drawConfig.mineCorner.toPx(), drawConfig.mineSize.toPx()) + offset
-                drawLine(drawConfig.colors.hiddenFill, start, end, drawConfig.borderWidth.toPx())
-            }
         } }
+
+        val dashOffLength = drawConfig.mineCorner.toPx() * 2
+        val pathEffect = PathEffect.dashPathEffect(
+            floatArrayOf(mineSizePx - dashOffLength, dashOffLength),
+            -drawConfig.mineCorner.toPx()
+        )
+        for (y in top until bottom) {
+            var start: Offset? = null
+            var length = 0f
+            for (x in left..right) {
+                if (map.getItemUI(y, x) is GameInstance.MineItemUI.Opened &&
+                    map.getItemUI(y+1, x) is GameInstance.MineItemUI.Opened) {
+                    if (start == null) {
+                        start = Offset(0f, mineSizePx) + Offset(x * mineSizePx, y * mineSizePx)
+                    }
+                    length += mineSizePx
+                } else if (start != null && length > 0) {
+                    val end = Offset(start.x + length, start.y)
+                    drawLine(drawConfig.colors.hiddenFill, start, end, drawConfig.borderWidth.toPx(),
+                        pathEffect = pathEffect)
+                    start = null
+                    length = 0f
+                }
+            }
+            if (start != null && length > 0) {
+                val end = Offset(start.x + length, start.y)
+                drawLine(drawConfig.colors.hiddenFill, start, end, drawConfig.borderWidth.toPx(),
+                    pathEffect = pathEffect)
+            }
+        }
+        for (x in left until right) {
+            var start: Offset? = null
+            var length = 0f
+            for (y in top..bottom) {
+                if (map.getItemUI(y, x) is GameInstance.MineItemUI.Opened &&
+                    map.getItemUI(y, x + 1) is GameInstance.MineItemUI.Opened) {
+                    if (start == null) {
+                        start = Offset(mineSizePx, 0f) + Offset(x * mineSizePx, y * mineSizePx)
+                    }
+                    length += mineSizePx
+                } else if (start != null && length > 0) {
+                    val end = Offset(start.x, start.y + length)
+                    drawLine(drawConfig.colors.hiddenFill, start, end, drawConfig.borderWidth.toPx(),
+                        pathEffect = pathEffect)
+                    start = null
+                    length = 0f
+                }
+            }
+            if (start != null && length > 0) {
+                val end = Offset(start.x, start.y + length)
+                drawLine(drawConfig.colors.hiddenFill, start, end, drawConfig.borderWidth.toPx(),
+                    pathEffect = pathEffect)
+            }
+        }
     }
 }
 
@@ -187,7 +233,13 @@ private fun DrawScope.drawMineWithImage(
 
     val vectorOffset = paddingOffset + Offset(drawConfig.innerPadding.toPx(), drawConfig.innerPadding.toPx())
     val vectorRect = Rect(vectorOffset, Size(drawConfig.imageSize.toPx(), drawConfig.imageSize.toPx()))
-    val mappedRect = transform.map(vectorRect)
+    val translateX = transform.translateX()
+    val translateY = transform.translateY()
+    val scale = transform.scaleX()
+    val mappedRect = Rect(
+        Offset(vectorRect.left * scale + translateX, vectorRect.top * scale + translateY),
+        vectorRect.size * scale
+    )
 
     when (item) {
         GameInstance.MineItemUI.Hidden, GameInstance.MineItemUI.HiddenHover -> null

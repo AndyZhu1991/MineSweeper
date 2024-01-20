@@ -310,7 +310,8 @@ fun BottomMenu(currentLevel: GameConfig.Level, navigation: LevelSelectScreenComp
 }
 
 private const val MIN_MAP_SIZE = 3
-private const val MAX_MAP_SIZE = 100
+private const val MAX_MAP_WIDTH = 200
+private const val MAX_MAP_HEIGHT = 100
 
 @Composable
 fun CustomGameDialog(
@@ -322,8 +323,8 @@ fun CustomGameDialog(
     var height by remember { mutableStateOf(gameConfig.height.toString()) }
     var mineCount by remember { mutableStateOf(gameConfig.mineCount.toString()) }
 
-    val isWidthError = width.toIntOrNull() !in MIN_MAP_SIZE..MAX_MAP_SIZE
-    val isHeightError = height.toIntOrNull() !in MIN_MAP_SIZE..MAX_MAP_SIZE
+    val isWidthError = width.toIntOrNull() !in MIN_MAP_SIZE..MAX_MAP_WIDTH
+    val isHeightError = height.toIntOrNull() !in MIN_MAP_SIZE..MAX_MAP_HEIGHT
     val isMineCountError = if (isWidthError || isHeightError) {
         false
     } else {
