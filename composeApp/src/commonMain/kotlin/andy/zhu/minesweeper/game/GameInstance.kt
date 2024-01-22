@@ -155,6 +155,10 @@ class GameInstance(
         }
     }
 
+    fun onAnimationFinished() {
+        updateMapUI()
+    }
+
     private fun indexToPosition(index: Int): Position {
         return Position(index % gameConfig.width, index / gameConfig.width)
     }
@@ -197,30 +201,33 @@ class GameInstance(
     }
     
     private fun buildMapUI(animations: List<Pair<MineItemUI.Animation, Position>> = emptyList()): MineMapUI {
-        val mineUIItems: List<MineItemUI> = MutableList(gameConfig.mapSize()) { index ->
-            animations.firstOrNull { it.second.flattenedIndex() == index }?.let {
-                return@MutableList it.first
+        val mineUIItems: List<MineItemUI> = buildList(gameConfig.mapSize()) {
+            (0 until gameConfig.mapSize()).forEach { index ->
+                val s = when(status[index]) {
+                    GridStatus.HIDDEN -> {
+                        if (hoverPosition?.flattenedIndex() == index) {
+                            MineItemUI.HiddenHover
+                        } else {
+                            MineItemUI.Hidden
+                        }
+                    }
+                    GridStatus.FLAGGED -> MineItemUI.Flagged
+                    GridStatus.UNCERTAIN -> MineItemUI.Uncertain
+                    GridStatus.OPENED -> {
+                        if (hasMine[index]) {
+                            MineItemUI.OpenedBoom
+                        } else {
+                            MineItemUI.Opened(mineCount[index])
+                        }
+                    }
+                }
+                add(s)
             }
-            when(status[index]) {
-                GridStatus.HIDDEN -> {
-                    if (hoverPosition?.flattenedIndex() == index) {
-                        MineItemUI.HiddenHover
-                    } else {
-                        MineItemUI.Hidden
-                    }
-                }
-                GridStatus.FLAGGED -> MineItemUI.Flagged
-                GridStatus.UNCERTAIN -> MineItemUI.Uncertain
-                GridStatus.OPENED -> {
-                    if (hasMine[index]) {
-                        MineItemUI.OpenedBoom
-                    } else {
-                        MineItemUI.Opened(mineCount[index])
-                    }
-                }
+            animations.forEach {
+                set(it.second.flattenedIndex(), it.first)
             }
         }
-        return MineMapUI(mineUIItems, gameConfig)
+        return MineMapUI(mineUIItems, gameConfig, animations.isNotEmpty())
     }
     
     private fun updateMapUI(animations: List<Pair<MineItemUI.Animation, Position>> = emptyList()) {
@@ -277,7 +284,7 @@ class GameInstance(
             val hiddens = neighbours.filter { status[it] == GridStatus.HIDDEN }
             if (hiddens.isNotEmpty()) {
                 if (flagCount == mineCount[position]) {
-                    openGrids(hiddens)
+                    openGrids(hiddens, position)
                 } else if (flagCount < mineCount[position]) {
                     updateMapUI(hiddens.map { MineItemUI.BlinkAnimation to it })
                 }
@@ -285,12 +292,13 @@ class GameInstance(
         }
     }
 
-    private fun openGrids(positions: List<Position>): List<Position> {
+    private fun openGrids(positions: List<Position>, source: Position = positions[0]): List<Position> {
         if (openedCount.value == 0) {
             startTimer()
             initMinesArray(positions[0])
             initCountArray()
         }
+        hoverPosition = null
         val queue = positions.filter { status[it] == GridStatus.HIDDEN }.toMutableList()
         var index = 0
         while (index < queue.size) {
@@ -308,7 +316,11 @@ class GameInstance(
             }
             index++
         }
-        updateMapUI()
+        val animations = queue
+            .map {
+                MineItemUI.RevealAnimation(MineItemUI.Opened(mineCount[it]), source) to it
+            }
+        updateMapUI(animations)
         return queue
     }
 
@@ -382,16 +394,17 @@ class GameInstance(
 
         sealed class Animation(val targetUI: MineItemUI): MineItemUI()
         object BlinkAnimation: Animation(Hidden)
+        class RevealAnimation(val opened: Opened, val source: Position): Animation(opened)
     }
     
     class MineMapUI(
         val items: List<MineItemUI>,
         gameConfig: GameConfig,
+        val hasAnimation: Boolean,
+        val animationDuration: Int = 200,
     ) {
         val width = gameConfig.width
         val height = gameConfig.height
-
-        val hasAnimation = items.any { it is MineItemUI.Animation }
 
         fun getItemUI(y: Int, x: Int): MineItemUI {
             return items[width * y + x]

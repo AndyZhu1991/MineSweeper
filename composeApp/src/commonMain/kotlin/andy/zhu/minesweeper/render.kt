@@ -44,6 +44,15 @@ internal fun DrawScope.drawMines(
     val mineRight = kotlin.math.min((viewPort.right / mineWidth).toInt(), map.width - 1)
     val mineBottom = kotlin.math.min((viewPort.bottom / mineHeight).toInt(), map.height - 1)
 
+    for (y in mineTop..mineBottom) {
+        for (x in mineLeft..mineRight) {
+            when(drawConfig) {
+                is MineDrawConfig.Image -> drawRevealAnimationNum(transform, map, y, x, drawConfig)
+                else -> Unit
+            }
+        }
+    }
+
     drawItemBorderAndBg(transform, map, drawConfig, animationFraction, mineLeft, mineTop, mineRight, mineBottom)
 
     for (y in mineTop..mineBottom) {
@@ -102,6 +111,7 @@ private fun DrawScope.drawMineWithFont(
             }
 
             GameInstance.MineItemUI.BlinkAnimation -> Unit
+            is GameInstance.MineItemUI.RevealAnimation -> Unit
         }
     }
 }
@@ -158,6 +168,19 @@ private fun DrawScope.drawItemBorderAndBg(
                         drawConfig.colors.hiddenHoverFill.transform(drawConfig.colors.hiddenFill, (animationFraction - 0.5f) * 2)
                     }
                 }
+                is GameInstance.MineItemUI.RevealAnimation -> {
+                    val targetOffset = paddingOffset + Offset(innerSize.width / 2, innerSize.height / 2)
+                    val targetSize = Size.Zero
+                    val targetCorner = 0f
+                    drawRoundRect(
+                        drawConfig.colors.hiddenFill,
+                        paddingOffset + (targetOffset - paddingOffset) * animationFraction,
+                        Size(innerSize.width + (targetSize.width - innerSize.width) * animationFraction,
+                            innerSize.height + (targetSize.height - innerSize.height) * animationFraction),
+                        CornerRadius(fillCorner.x + (targetCorner - fillCorner.x) * animationFraction)
+                    )
+                    null
+                }
             }?.let { fillColor ->
                 drawRoundRect(fillColor, paddingOffset, innerSize, fillCorner)
             }
@@ -172,8 +195,7 @@ private fun DrawScope.drawItemBorderAndBg(
             var start: Offset? = null
             var length = 0f
             for (x in left..right) {
-                if (map.getItemUI(y, x) is GameInstance.MineItemUI.Opened &&
-                    map.getItemUI(y+1, x) is GameInstance.MineItemUI.Opened) {
+                if (map.getItemUI(y, x).isOpened() && map.getItemUI(y+1, x).isOpened()) {
                     if (start == null) {
                         start = Offset(0f, mineSizePx) + Offset(x * mineSizePx, y * mineSizePx)
                     }
@@ -196,8 +218,7 @@ private fun DrawScope.drawItemBorderAndBg(
             var start: Offset? = null
             var length = 0f
             for (y in top..bottom) {
-                if (map.getItemUI(y, x) is GameInstance.MineItemUI.Opened &&
-                    map.getItemUI(y, x + 1) is GameInstance.MineItemUI.Opened) {
+                if (map.getItemUI(y, x).isOpened() && map.getItemUI(y, x + 1).isOpened()) {
                     if (start == null) {
                         start = Offset(mineSizePx, 0f) + Offset(x * mineSizePx, y * mineSizePx)
                     }
@@ -219,6 +240,21 @@ private fun DrawScope.drawItemBorderAndBg(
     }
 }
 
+private fun DrawScope.calcItemMappedRect(transform: Matrix, y: Int, x: Int, drawConfig: MineDrawConfig.Image): Rect {
+    val offset = Offset(x * drawConfig.mineSize.toPx(), y * drawConfig.mineSize.toPx())
+    val paddingOffset = offset + Offset(drawConfig.padding.toPx(), drawConfig.padding.toPx())
+
+    val vectorOffset = paddingOffset + Offset(drawConfig.innerPadding.toPx(), drawConfig.innerPadding.toPx())
+    val vectorRect = Rect(vectorOffset, Size(drawConfig.imageSize.toPx(), drawConfig.imageSize.toPx()))
+    val translateX = transform.translateX()
+    val translateY = transform.translateY()
+    val scale = transform.scaleX()
+    return Rect(
+        Offset(vectorRect.left * scale + translateX, vectorRect.top * scale + translateY),
+        vectorRect.size * scale
+    )
+}
+
 private fun DrawScope.drawMineWithImage(
     transform: Matrix,
     map: GameInstance.MineMapUI,
@@ -227,21 +263,7 @@ private fun DrawScope.drawMineWithImage(
     animationFraction: Float,
     drawConfig: MineDrawConfig.Image,
 ) {
-    val offset = Offset(x * drawConfig.mineSize.toPx(), y * drawConfig.mineSize.toPx())
-    val paddingOffset = offset + Offset(drawConfig.padding.toPx(), drawConfig.padding.toPx())
-    val item = map.getItemUI(y, x)
-
-    val vectorOffset = paddingOffset + Offset(drawConfig.innerPadding.toPx(), drawConfig.innerPadding.toPx())
-    val vectorRect = Rect(vectorOffset, Size(drawConfig.imageSize.toPx(), drawConfig.imageSize.toPx()))
-    val translateX = transform.translateX()
-    val translateY = transform.translateY()
-    val scale = transform.scaleX()
-    val mappedRect = Rect(
-        Offset(vectorRect.left * scale + translateX, vectorRect.top * scale + translateY),
-        vectorRect.size * scale
-    )
-
-    when (item) {
+    when (val item = map.getItemUI(y, x)) {
         GameInstance.MineItemUI.Hidden, GameInstance.MineItemUI.HiddenHover -> null
         GameInstance.MineItemUI.Flagged -> drawConfig.flagImage to drawConfig.colors.marker
         GameInstance.MineItemUI.Uncertain -> drawConfig.questionMark to drawConfig.colors.marker
@@ -255,13 +277,36 @@ private fun DrawScope.drawMineWithImage(
             }
         }
         GameInstance.MineItemUI.BlinkAnimation -> null
+        is GameInstance.MineItemUI.RevealAnimation -> null
     }?.let { (image, color) ->
+        val mappedRect = calcItemMappedRect(transform, y, x, drawConfig)
         translate(mappedRect.left, mappedRect.top) {
             with(image) {
                 draw(mappedRect.size, colorFilter = ColorFilter.tint(color))
             }
         }
     }
+}
+
+private fun DrawScope.drawRevealAnimationNum(
+    transform: Matrix,
+    map: GameInstance.MineMapUI,
+    y: Int,
+    x: Int,
+    drawConfig: MineDrawConfig.Image,
+) {
+    val revealAnimation = map.getItemUI(y, x) as? GameInstance.MineItemUI.RevealAnimation ?: return
+    val mappedRect = calcItemMappedRect(transform, y, x, drawConfig)
+    val num = revealAnimation.opened.num
+    if (num != 0) {
+        val image = drawConfig.numberImages[num]
+        translate(mappedRect.left, mappedRect.top) {
+            with(image) {
+                draw(mappedRect.size, colorFilter = ColorFilter.tint(drawConfig.colors.number))
+            }
+        }
+    }
+
 }
 
 data class MineCanvasColor(
@@ -320,4 +365,8 @@ sealed class MineDrawConfig(
         val defaultMineSize = 48.dp
         val canvasPadding = 8.dp
     }
+}
+
+fun GameInstance.MineItemUI.isOpened(): Boolean {
+    return this is GameInstance.MineItemUI.Opened || this is GameInstance.MineItemUI.RevealAnimation
 }

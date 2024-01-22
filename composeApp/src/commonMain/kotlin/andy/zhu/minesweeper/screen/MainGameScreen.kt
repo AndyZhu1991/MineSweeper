@@ -85,7 +85,8 @@ fun MainGameScreen(component: MainGameScreenComponent) {
     LaunchedEffect(mapUI) {
         if (mapUI.hasAnimation) {
             canvasAnimationFraction.snapTo(0f)
-            canvasAnimationFraction.animateTo(1f, animationSpec = tween(200))
+            canvasAnimationFraction.animateTo(1f, tween(mapUI.animationDuration))
+            gameInstance.onAnimationFinished()
         } else {
             if (canvasAnimationFraction.isRunning) {
                 canvasAnimationFraction.stop()
