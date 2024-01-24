@@ -33,7 +33,7 @@ fun AboutScreen(component: AboutScreenComponent) {
 @Composable
 fun AboutContent() {
     Column(
-        modifier = Modifier.padding(horizontal = 16.dp),
+        modifier = Modifier.padding(horizontal = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Row(

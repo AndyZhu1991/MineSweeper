@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -31,7 +33,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
 import andy.zhu.minesweeper.MineDrawConfig
@@ -50,10 +54,15 @@ fun PaletteScreen(component: PaletteScreenComponent) {
         val dpSize = with(LocalDensity.current) {
             mainAreaSize?.toSize()?.toDpSize()
         }
+        val layoutDirection = LocalLayoutDirection.current
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
+                .padding(
+                    start = paddingValues.calculateStartPadding(layoutDirection),
+                    top = paddingValues.calculateTopPadding(),
+                    end = paddingValues.calculateEndPadding(layoutDirection),
+                )
                 .onGloballyPositioned { mainAreaSize = it.size },
         ) {
             if (dpSize != null && dpSize.height >= 500.dp) {
@@ -96,6 +105,7 @@ fun PaletteScreen(component: PaletteScreenComponent) {
                         },
                     )
                 }
+                Spacer(Modifier.height(paddingValues.calculateBottomPadding()))
             }
         }
     }
