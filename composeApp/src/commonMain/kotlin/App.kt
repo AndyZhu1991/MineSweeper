@@ -6,6 +6,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.Color
@@ -27,19 +28,24 @@ import com.arkivanov.decompose.extensions.compose.subscribeAsState
 fun App(root: RootComponent) {
     val colorSchemeName by root.colorSchemeName.collectAsState()
     val colorPreference by root.colorPreference.collectAsState()
-    val isDarkTheme = isSystemInDarkTheme()
-    val colorScheme = ColorConfig(
+    val isSystemDark = isSystemInDarkTheme()
+    val colorConfig = ColorConfig(
         colorSchemeName,
-        isDarkTheme,
+        isSystemDark,
         colorPreference,
-    ).resolveColorScheme()
+    )
+    val colorScheme = colorConfig.resolveColorScheme()
+
+    LaunchedEffect(colorConfig.useLightTheme()) {
+        root.setStatusBarDark(!colorConfig.useLightTheme())
+    }
 
     MaterialTheme(
         colorScheme = colorScheme
     ) {
         val childStack by root.childStack.subscribeAsState()
         Surface {
-            CompositionLocalProvider(LocalRippleTheme provides ThemedRippleTheme(colorScheme.primaryContainer, !isDarkTheme)) {
+            CompositionLocalProvider(LocalRippleTheme provides ThemedRippleTheme(colorScheme.primaryContainer, !isSystemDark)) {
                 Children(
                     stack = childStack,
                     animation = stackAnimation(slide()),

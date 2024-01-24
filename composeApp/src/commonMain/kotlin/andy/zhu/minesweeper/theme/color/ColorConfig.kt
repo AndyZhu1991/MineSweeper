@@ -11,16 +11,19 @@ class ColorConfig(
     val colorPreference: ColorPreference,
 ) {
     fun resolveColorScheme(): ColorScheme {
-        val useLightTheme = when(colorPreference) {
-            ColorPreference.FollowSystem -> !isSystemDark
-            ColorPreference.Light -> true
-            ColorPreference.Dark -> false
-        }
         val colorFamily = colorFamilyMap[schemeName] ?: Default
-        return if (useLightTheme) {
+        return if (useLightTheme()) {
             colorFamily.lightScheme
         } else {
             colorFamily.darkScheme
+        }
+    }
+
+    fun useLightTheme(): Boolean {
+        return when(colorPreference) {
+            ColorPreference.FollowSystem -> !isSystemDark
+            ColorPreference.Light -> true
+            ColorPreference.Dark -> false
         }
     }
 

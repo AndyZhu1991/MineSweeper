@@ -17,7 +17,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.serialization.Serializable
 
 class RootComponent(
-    componentContext: ComponentContext
+    componentContext: ComponentContext,
+    val setStatusBarDark: (Boolean) -> Unit = {},
 ) : ComponentContext by componentContext {
 
     private val _colorSchemeName = MutableStateFlow(getColorSchemeName())
