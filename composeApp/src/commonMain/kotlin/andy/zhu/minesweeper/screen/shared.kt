@@ -161,6 +161,7 @@ internal fun PreviewMineMap(
             onMineTap(Position(mineMapWidth / 2, mineMapHeight / 2))
             flagAllCanBeFlagged()
             onPause()
+            refreshUi()
         }
     }
     val drawConfig = CreateDrawConfig()

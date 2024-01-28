@@ -159,6 +159,8 @@ class GameInstance(
         updateMapUI()
     }
 
+    fun refreshUi() = updateMapUI()
+
     private fun indexToPosition(index: Int): Position {
         return Position(index % gameConfig.width, index / gameConfig.width)
     }
