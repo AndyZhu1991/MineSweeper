@@ -66,6 +66,8 @@ import andy.zhu.minesweeper.navigation.LevelSelectScreenComponent
 import andy.zhu.minesweeper.settings.getCustomGame
 import andy.zhu.minesweeper.settings.loadGame
 import andy.zhu.minesweeper.settings.saveCustomGame
+import minesweeper.composeapp.generated.resources.Res
+import minesweeper.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.painterResource
 
@@ -249,7 +251,7 @@ private fun LevelCard(gameConfig: GameConfig, onCustom: () -> Unit) {
                         modifier = Modifier.align(Alignment.CenterEnd),
                     ) {
                         Icon(
-                            painterResource("tune.xml"),
+                            painterResource(Res.drawable.tune),
                             contentDescription = null,
                         )
                     }
@@ -265,7 +267,7 @@ private fun LevelCard(gameConfig: GameConfig, onCustom: () -> Unit) {
                 )
                 Spacer(Modifier.weight(1f))
                 Icon(
-                    painterResource("mine.xml"),
+                    painterResource(Res.drawable.mine),
                     contentDescription = null,
                 )
                 Text(
@@ -298,12 +300,12 @@ fun BottomMenu(currentLevel: GameConfig.Level, navigation: LevelSelectScreenComp
         }
         Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
             IconButton(onClick = navigation::palette) {
-                Icon(painterResource("palette.xml"), contentDescription = null)
+                Icon(painterResource(Res.drawable.palette), contentDescription = null)
             }
         }
         Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
             IconButton(onClick = { navigation.rank(currentLevel) }) {
-                Icon(painterResource("list_numbered.xml"), contentDescription = null)
+                Icon(painterResource(Res.drawable.list_numbered), contentDescription = null)
             }
         }
     }

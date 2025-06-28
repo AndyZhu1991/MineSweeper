@@ -1,4 +1,4 @@
-package andy.zhu.minesweeper.extensions
+package andy.zhu.minesweeper
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Matrix

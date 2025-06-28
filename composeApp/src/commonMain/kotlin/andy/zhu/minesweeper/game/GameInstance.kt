@@ -1,8 +1,8 @@
 package andy.zhu.minesweeper.game
 
 import androidx.compose.ui.unit.IntOffset
-import andy.zhu.minesweeper.extensions.combine
-import andy.zhu.minesweeper.extensions.map
+import andy.zhu.minesweeper.combine
+import andy.zhu.minesweeper.map
 import andy.zhu.minesweeper.navigation.SettingsScreenComponent
 import andy.zhu.minesweeper.settings.RankItem
 import andy.zhu.minesweeper.settings.getDefaultAction
@@ -14,7 +14,8 @@ import kotlinx.coroutines.*
 
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.datetime.Clock
+import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
 
 class GameInstance(
     val gameConfig: GameConfig,
@@ -359,6 +360,7 @@ class GameInstance(
         timerJob = null
     }
 
+    @OptIn(ExperimentalTime::class)
     private fun buildWinInfo(): GameWinInfo {
         if (gameConfig.level == GameConfig.Level.Custom) {
             return GameWinInfo(emptyList(), -1)

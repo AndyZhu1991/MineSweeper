@@ -7,5 +7,4 @@ class RankScreenComponent(
     componentContext: ComponentContext,
     val currentLevel: GameConfig.Level,
     val onClose: () -> Unit,
-): ComponentContext by componentContext {
-}
+): ComponentContext by componentContext

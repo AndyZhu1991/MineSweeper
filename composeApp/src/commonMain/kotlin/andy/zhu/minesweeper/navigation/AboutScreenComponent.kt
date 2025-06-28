@@ -5,5 +5,4 @@ import com.arkivanov.decompose.ComponentContext
 class AboutScreenComponent(
     componentContext: ComponentContext,
     val onClose: () -> Unit,
-): ComponentContext by componentContext {
-}
+): ComponentContext by componentContext

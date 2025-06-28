@@ -13,20 +13,18 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -44,14 +42,19 @@ import andy.zhu.minesweeper.game.GameConfig
 import andy.zhu.minesweeper.game.GameInstance
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import minesweeper.composeapp.generated.resources.Res
+import minesweeper.composeapp.generated.resources.*
+import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.painterResource
+import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 
 internal val gameConfigsWithOutCustom = listOf(GameConfig.Easy, GameConfig.Medium, GameConfig.Hard, GameConfig.Extreme)
 
+@OptIn(ExperimentalTime::class)
 @Composable
 internal fun RankLine(order: Int, score: Int, timeStamp: Long, isCurrent: Boolean) {
     Row(
@@ -66,7 +69,7 @@ internal fun RankLine(order: Int, score: Int, timeStamp: Long, isCurrent: Boolea
     ) {
         Box(modifier = Modifier.size(24.dp)) {
             Icon(
-                painterResource("numeric_$order.png"),
+                painterResource(numericRes(order)),
                 contentDescription = null,
                 modifier = Modifier.size(24.dp),
             )
@@ -93,6 +96,22 @@ internal fun RankLine(order: Int, score: Int, timeStamp: Long, isCurrent: Boolea
     }
 }
 
+private fun numericRes(index: Int): DrawableResource {
+    return listOf(
+        Res.drawable.numeric_0,
+        Res.drawable.numeric_1,
+        Res.drawable.numeric_2,
+        Res.drawable.numeric_3,
+        Res.drawable.numeric_4,
+        Res.drawable.numeric_5,
+        Res.drawable.numeric_6,
+        Res.drawable.numeric_7,
+        Res.drawable.numeric_8,
+        Res.drawable.numeric_9,
+        Res.drawable.numeric_10,
+    )[index]
+}
+
 @Composable
 internal fun SimpleTopAppBar(title: String, alpha: Float = 1f, onBack: () -> Unit) {
     CenterAlignedTopAppBar(
@@ -103,7 +122,7 @@ internal fun SimpleTopAppBar(title: String, alpha: Float = 1f, onBack: () -> Uni
         navigationIcon = {
             IconButton(onClick = onBack) {
                 Icon(
-                    imageVector = Icons.Filled.ArrowBack,
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = "Localized description"
                 )
             }
@@ -126,7 +145,7 @@ internal fun PagerBackwardButton(
         },
         enabled = pagerState.canScrollBackward,
     ) {
-        Icon(painterResource("arrow_back.xml"), contentDescription = null)
+        Icon(painterResource(Res.drawable.arrow_back), contentDescription = null)
     }
 }
 
@@ -145,7 +164,7 @@ internal fun PagerForwardButton(
         },
         enabled = pagerState.canScrollForward,
     ) {
-        Icon(painterResource("arrow_forward.xml"), contentDescription = null)
+        Icon(painterResource(Res.drawable.arrow_forward), contentDescription = null)
     }
 }
 
@@ -164,7 +183,7 @@ internal fun PreviewMineMap(
             refreshUi()
         }
     }
-    val drawConfig = CreateDrawConfig()
+    val drawConfig = createDrawConfig()
     Box(
         modifier = Modifier.fillMaxWidth().height(MineDrawConfig.defaultMineSize * gameInstance.gameConfig.height)
     ) {

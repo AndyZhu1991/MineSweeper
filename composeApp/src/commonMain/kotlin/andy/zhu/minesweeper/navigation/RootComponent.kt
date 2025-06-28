@@ -8,6 +8,7 @@ import andy.zhu.minesweeper.settings.saveColorPreference
 import andy.zhu.minesweeper.settings.saveColorSchemeName
 import andy.zhu.minesweeper.theme.color.ColorPreference
 import com.arkivanov.decompose.ComponentContext
+import com.arkivanov.decompose.DelicateDecomposeApi
 import com.arkivanov.decompose.router.stack.StackNavigation
 import com.arkivanov.decompose.router.stack.childStack
 import com.arkivanov.decompose.router.stack.pop
@@ -134,6 +135,7 @@ class RootComponent(
         data object SettingsScreen : Config()
     }
 
+    @OptIn(DelicateDecomposeApi::class)
     private inner class LevelSelectNavigation: LevelSelectScreenComponent.Navigation {
         override fun startGame(level: GameConfig) {
             navigation.push(Config.MainGameScreen(level))

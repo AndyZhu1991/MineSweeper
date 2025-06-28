@@ -51,7 +51,7 @@ class GameSave(
             return str.split(",").mapNotNull {
                 try {
                     it.toInt()
-                } catch (e: Exception) {
+                } catch (_: Exception) {
                     null
                 }
             }

@@ -20,11 +20,6 @@ import androidx.compose.ui.text.drawText
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import andy.zhu.minesweeper.extensions.inverted
-import andy.zhu.minesweeper.extensions.scaleX
-import andy.zhu.minesweeper.extensions.transform
-import andy.zhu.minesweeper.extensions.translateX
-import andy.zhu.minesweeper.extensions.translateY
 import andy.zhu.minesweeper.game.GameInstance
 
 

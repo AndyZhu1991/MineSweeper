@@ -15,6 +15,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import andy.zhu.minesweeper.navigation.AboutScreenComponent
+import minesweeper.composeapp.generated.resources.Res
+import minesweeper.composeapp.generated.resources.mine
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.painterResource
 
@@ -40,7 +42,7 @@ fun AboutContent() {
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(
-                painter = painterResource("mine.xml"),
+                painter = painterResource(Res.drawable.mine),
                 contentDescription = null,
                 modifier = Modifier.size(64.dp),
                 tint = MaterialTheme.colorScheme.primary,

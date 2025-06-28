@@ -22,7 +22,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CenterAlignedTopAppBar
@@ -59,13 +59,15 @@ import androidx.compose.ui.unit.dp
 import andy.zhu.minesweeper.MineCanvasColor
 import andy.zhu.minesweeper.MineDrawConfig
 import andy.zhu.minesweeper.drawMines
-import andy.zhu.minesweeper.extensions.inverted
-import andy.zhu.minesweeper.extensions.scale
-import andy.zhu.minesweeper.extensions.scaleX
-import andy.zhu.minesweeper.extensions.scaleY
-import andy.zhu.minesweeper.extensions.transformed
 import andy.zhu.minesweeper.game.GameInstance
+import andy.zhu.minesweeper.inverted
 import andy.zhu.minesweeper.navigation.MainGameScreenComponent
+import andy.zhu.minesweeper.scale
+import andy.zhu.minesweeper.scaleX
+import andy.zhu.minesweeper.scaleY
+import andy.zhu.minesweeper.transformed
+import minesweeper.composeapp.generated.resources.Res
+import minesweeper.composeapp.generated.resources.*
 import mousePointerMatcher
 import onPointerEvent
 import org.jetbrains.compose.resources.ExperimentalResourceApi
@@ -95,7 +97,7 @@ fun MainGameScreen(component: MainGameScreenComponent) {
         }
     }
 
-    val mineDrawConfig = CreateDrawConfig()
+    val mineDrawConfig = createDrawConfig()
     val density = LocalDensity.current
 
     val canvasPaddings = with(LocalDensity.current) {
@@ -172,7 +174,7 @@ fun MainGameScreen(component: MainGameScreenComponent) {
                 navigationIcon = {
                     IconButton(onClick = component.onClose) {
                         Icon(
-                            imageVector = Icons.Filled.ArrowBack,
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Localized description"
                         )
                     }
@@ -335,7 +337,7 @@ private fun Title(gameInstance: GameInstance) {
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(
-                painter = painterResource("clock.xml"),
+                painter = painterResource(Res.drawable.clock),
                 contentDescription = null,
                 modifier = Modifier.size(22.dp),
             )
@@ -350,7 +352,7 @@ private fun Title(gameInstance: GameInstance) {
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(
-                painter = painterResource("mine.xml"),
+                painter = painterResource(Res.drawable.mine),
                 contentDescription = null,
                 modifier = Modifier.size(14.dp),
             )
@@ -373,7 +375,7 @@ private fun MineFab(gameInstance: GameInstance) {
             containerColor = MaterialTheme.colorScheme.secondaryContainer,
         ) {
             Icon(
-                painter = painterResource(if (flagWhenTap) "flag.xml" else "mine.xml"),
+                painter = painterResource(if (flagWhenTap) Res.drawable.flag else Res.drawable.mine),
                 contentDescription = "",
                 modifier = Modifier.size(36.dp),
                 tint = MaterialTheme.colorScheme.onSecondaryContainer,
@@ -417,13 +419,24 @@ private fun FailureDialog(
 }
 
 @Composable
-fun CreateDrawConfig(): MineDrawConfig {
+fun createDrawConfig(): MineDrawConfig {
     return MineDrawConfig.Image(
         MineCanvasColor.fromColorScheme(MaterialTheme.colorScheme),
-        (0 until 10).map { painterResource("numeric_$it.png") },
-        painterResource("mine.png"),
-        painterResource("flag.png"),
-        painterResource("question_mark.png"),
+        listOf(
+            painterResource(Res.drawable.numeric_0_png),
+            painterResource(Res.drawable.numeric_1_png),
+            painterResource(Res.drawable.numeric_2_png),
+            painterResource(Res.drawable.numeric_3_png),
+            painterResource(Res.drawable.numeric_4_png),
+            painterResource(Res.drawable.numeric_5_png),
+            painterResource(Res.drawable.numeric_6_png),
+            painterResource(Res.drawable.numeric_7_png),
+            painterResource(Res.drawable.numeric_8_png),
+            painterResource(Res.drawable.numeric_9_png),
+        ),
+        painterResource(Res.drawable.mine_png),
+        painterResource(Res.drawable.flag_png),
+        painterResource(Res.drawable.question_mark_png),
     )
 }
 
