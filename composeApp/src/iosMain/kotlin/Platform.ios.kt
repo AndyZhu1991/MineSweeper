@@ -4,6 +4,9 @@ import androidx.compose.ui.input.pointer.AwaitPointerEventScope
 import androidx.compose.ui.input.pointer.PointerEvent
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerEventType
+import andy.zhu.minesweeper.Database
+import app.cash.sqldelight.db.SqlDriver
+import app.cash.sqldelight.driver.native.NativeSqliteDriver
 import com.russhwolf.settings.NSUserDefaultsSettings
 import com.russhwolf.settings.Settings
 import platform.UIKit.UIDevice
@@ -30,3 +33,7 @@ actual fun Modifier.onPointerEvent(
     pass: PointerEventPass,
     onEvent: AwaitPointerEventScope.(event: PointerEvent) -> Unit
 ): Modifier = this
+
+actual fun createSqlDriver(): SqlDriver {
+    return NativeSqliteDriver(Database.Schema, "database.db")
+}

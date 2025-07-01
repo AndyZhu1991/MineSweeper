@@ -1,6 +1,9 @@
+@file:OptIn(ExperimentalWasmDsl::class)
+
+import org.gradle.kotlin.dsl.implementation
 import org.jetbrains.compose.ExperimentalComposeLibrary
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
-import org.jetbrains.kotlin.gradle.targets.js.dsl.ExperimentalWasmDsl
+import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
@@ -8,10 +11,10 @@ plugins {
     alias(libs.plugins.jetbrainsCompose)
     alias(libs.plugins.kotlinx.serialization)
     alias(libs.plugins.compose.compiler)
+    alias(libs.plugins.sqldelight)
 }
 
 kotlin {
-    @OptIn(ExperimentalWasmDsl::class)
     wasmJs {
         outputModuleName.set("composeApp")
         browser {
@@ -20,6 +23,7 @@ kotlin {
             }
         }
         binaries.executable()
+        useEsModules()
     }
     
     androidTarget {
@@ -61,15 +65,30 @@ kotlin {
             implementation(libs.kotlinx.datetime)
             implementation(libs.settings)
             implementation(libs.kotlinx.serialization.json)
+            implementation(libs.sqldelight.coroutines)
+            implementation(project.dependencies.platform(libs.koin.bom))
+            implementation(libs.koin.core)
+            implementation(libs.koin.compose)
         }
         androidMain.dependencies {
             implementation(libs.compose.ui.tooling.preview)
             implementation(libs.androidx.activity.compose)
             implementation(libs.kotlinx.coroutines.android)
+            implementation(libs.sqldelight.android)
         }
         desktopMain.dependencies {
             implementation(compose.desktop.currentOs)
             implementation(compose.preview)
+            implementation(libs.sqldelight.sqlite.driver)
+        }
+        iosMain.dependencies {
+            implementation(libs.sqldelight.ios)
+        }
+        wasmJsMain.dependencies {
+            implementation(libs.sqldelight.wasm)
+            implementation(devNpm("copy-webpack-plugin", "9.1.0"))
+            implementation(npm("@cashapp/sqldelight-sqljs-worker", "2.1.0"))
+            implementation(npm("sql.js", "1.12.0"))
         }
     }
 }
@@ -127,4 +146,12 @@ compose.resources {
 
 compose.experimental {
     web.application {}
+}
+
+sqldelight {
+    databases {
+        create("Database") {
+            packageName.set("andy.zhu.minesweeper")
+        }
+    }
 }

@@ -4,6 +4,7 @@ import androidx.compose.ui.input.pointer.AwaitPointerEventScope
 import androidx.compose.ui.input.pointer.PointerEvent
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerEventType
+import app.cash.sqldelight.db.SqlDriver
 import com.russhwolf.settings.Settings
 
 interface Platform {
@@ -25,6 +26,8 @@ expect fun Modifier.onPointerEvent(
     pass: PointerEventPass = PointerEventPass.Main,
     onEvent: AwaitPointerEventScope.(event: PointerEvent) -> Unit
 ): Modifier
+
+expect fun createSqlDriver(): SqlDriver
 
 enum class MousePointerButton {
     Primary, Secondary, Tertiary, Back, Forward

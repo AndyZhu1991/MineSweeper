@@ -1,11 +1,13 @@
 package andy.zhu.minesweeper.settings
 
+import andy.zhu.minesweeper.Database
 import andy.zhu.minesweeper.game.GameConfig
 import andy.zhu.minesweeper.game.GameSave
 import andy.zhu.minesweeper.navigation.SettingsScreenComponent
 import andy.zhu.minesweeper.theme.color.ColorConfig
 import andy.zhu.minesweeper.theme.color.ColorPreference
 import getPlatform
+import org.koin.mp.KoinPlatform.getKoin
 
 /**************************************************************************************************/
 // Rank
@@ -26,18 +28,50 @@ fun saveRank(config: GameConfig, rank: List<RankItem>) {
 // Game save
 /**************************************************************************************************/
 
-private const val PREF_NAME_GAME_SAVE = "game_save"
-
 fun saveGame(level: GameConfig.Level, gameSave: GameSave) {
-    getPlatform().getPreference(PREF_NAME_GAME_SAVE).putObject(level.name, gameSave)
+    removeGameSave(level)
+    getKoin().get<Database>().run {
+        gameSaveQueries.insert(
+            level.name,
+            gameSave.gameConfig.width.toLong(),
+            gameSave.gameConfig.height.toLong(),
+            gameSave.gameConfig.mineCount.toLong(),
+            gameSave.timeMillis.toLong(),
+            gameSave.mineIndicesStr(),
+            gameSave.openedIndicesStr(),
+            gameSave.flaggedIndicesStr(),
+        )
+    }
 }
 
-fun loadGame(level: GameConfig.Level): GameSave? {
-    return getPlatform().getPreference(PREF_NAME_GAME_SAVE).getObjectOrNull(level.name)
+fun loadGameSave(level: GameConfig.Level): GameSave? {
+    return getKoin().get<Database>().run {
+        val gameSave = gameSaveQueries.get(level.name).executeAsList().getOrNull(0) ?: return@run null
+        val gameConfig = when (level) {
+            GameConfig.Level.Easy -> GameConfig.Easy
+            GameConfig.Level.Medium -> GameConfig.Medium
+            GameConfig.Level.Hard -> GameConfig.Hard
+            GameConfig.Level.Extreme -> GameConfig.Extreme
+            GameConfig.Level.Custom -> GameConfig.Custom(
+                gameSave.width.toInt(),
+                gameSave.height.toInt(),
+                gameSave.mine_count.toInt(),
+            )
+        }
+        GameSave(
+            gameConfig,
+            gameSave.mine_indices.split(",").mapNotNull { it.toIntOrNull() },
+            gameSave.opened_indices.split(",").mapNotNull { it.toIntOrNull() },
+            gameSave.flagged_indices.split(",").mapNotNull { it.toIntOrNull() },
+            gameSave.time.toInt(),
+        )
+    }
 }
 
 fun removeGameSave(level: GameConfig.Level) {
-    getPlatform().getPreference(PREF_NAME_GAME_SAVE).remove(level.name)
+    getKoin().get<Database>().run {
+        gameSaveQueries.delete(level.name)
+    }
 }
 
 

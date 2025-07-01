@@ -5,8 +5,12 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.input.pointer.*
+import andy.zhu.minesweeper.Database
+import app.cash.sqldelight.db.SqlDriver
+import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import com.russhwolf.settings.PreferencesSettings
 import com.russhwolf.settings.Settings
+import java.util.Properties
 
 import androidx.compose.ui.input.pointer.onPointerEvent as jvmOnPointerEvent
 
@@ -42,6 +46,10 @@ actual fun Modifier.onPointerEvent(
     onEvent: AwaitPointerEventScope.(event: PointerEvent) -> Unit
 ): Modifier {
     return jvmOnPointerEvent(eventType, pass, onEvent)
+}
+
+actual fun createSqlDriver(): SqlDriver {
+    return JdbcSqliteDriver("jdbc:sqlite:database.db", Properties(), Database.Schema)
 }
 
 private fun MousePointerButton.toPointerButton(): PointerButton {

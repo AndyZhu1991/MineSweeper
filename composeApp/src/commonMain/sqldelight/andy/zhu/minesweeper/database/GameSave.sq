@@ -1,0 +1,21 @@
+CREATE TABLE GameSave (
+    id INTEGER PRIMARY KEY NOT NULL,
+    config_name TEXT NOT NULL,
+    width INTEGER NOT NULL,
+    height INTEGER NOT NULL,
+    mine_count INTEGER NOT NULL,
+    time INTEGER NOT NULL,
+    mine_indices TEXT NOT NULL,
+    opened_indices TEXT NOT NULL,
+    flagged_indices TEXT NOT NULL
+);
+
+get:
+SELECT * FROM GameSave WHERE config_name = ?;
+
+delete:
+DELETE FROM GameSave WHERE config_name = ?;
+
+insert:
+INSERT INTO GameSave (config_name, width, height, mine_count, time, mine_indices, opened_indices, flagged_indices)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?);

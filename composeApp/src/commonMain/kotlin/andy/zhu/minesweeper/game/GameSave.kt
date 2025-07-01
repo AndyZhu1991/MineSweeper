@@ -5,19 +5,21 @@ import kotlinx.serialization.Serializable
 @Serializable
 class GameSave(
     val gameConfig: GameConfig,
-    val mines: String,
-    val opened: String,
-    val flagged: String,
+    val mineIndices: List<Int>,
+    val openedIndices: List<Int>,
+    val flaggedIndices: List<Int>,
     val timeMillis: Int,
 ) {
-    val mineIndices: List<Int> by lazy(LazyThreadSafetyMode.NONE) {
-        splitToIntList(mines)
+    fun mineIndicesStr(): String {
+        return mineIndices.joinToString(",")
     }
-    val openedIndices: List<Int> by lazy(LazyThreadSafetyMode.NONE) {
-        splitToIntList(opened)
+
+    fun openedIndicesStr(): String {
+        return openedIndices.joinToString(",")
     }
-    val flaggedIndices: List<Int> by lazy(LazyThreadSafetyMode.NONE) {
-        splitToIntList(flagged)
+
+    fun flaggedIndicesStr(): String {
+        return flaggedIndices.joinToString(",")
     }
 
     companion object {
@@ -27,34 +29,23 @@ class GameSave(
             status: Array<GameInstance.GridStatus>,
             timeMillis: Int,
         ): GameSave {
-            val minePositions = mutableListOf<Int>().apply {
-                mines.forEachIndexed { index, b -> if (b) add(index) }
+            val minePositions = mines.toList().mapIndexedNotNull { index, isMine ->
+                if (isMine) index else null
             }
-            val openedPositions = mutableListOf<Int>().apply {
-                status.forEachIndexed { index, gridStatus -> if (gridStatus == GameInstance.GridStatus.OPENED) add(index) }
+            val openedPositions = status.mapIndexedNotNull { index, gridStatus ->
+                if (gridStatus == GameInstance.GridStatus.OPENED) index else null
             }
-            val flaggedPositions = mutableListOf<Int>().apply {
-                status.forEachIndexed { index, gridStatus -> if (gridStatus == GameInstance.GridStatus.FLAGGED) add(index) }
+            val flaggedPositions = status.mapIndexedNotNull { index, gridStatus ->
+                if (gridStatus == GameInstance.GridStatus.FLAGGED) index else null
             }
 
             return GameSave(
                 config,
-                minePositions.joinToString(","),
-                openedPositions.joinToString(","),
-                flaggedPositions.joinToString(","),
+                minePositions,
+                openedPositions,
+                flaggedPositions,
                 timeMillis,
             )
-        }
-
-        private fun splitToIntList(str: String): List<Int> {
-            if (str.isEmpty()) return emptyList()
-            return str.split(",").mapNotNull {
-                try {
-                    it.toInt()
-                } catch (_: Exception) {
-                    null
-                }
-            }
         }
     }
 }

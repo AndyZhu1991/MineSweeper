@@ -12,6 +12,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.luminance
+import andy.zhu.minesweeper.database.dbModule
 import andy.zhu.minesweeper.navigation.RootComponent
 import andy.zhu.minesweeper.screen.AboutScreen
 import andy.zhu.minesweeper.screen.LevelSelectScreen
@@ -24,6 +25,7 @@ import com.arkivanov.decompose.extensions.compose.stack.Children
 import com.arkivanov.decompose.extensions.compose.stack.animation.slide
 import com.arkivanov.decompose.extensions.compose.stack.animation.stackAnimation
 import com.arkivanov.decompose.extensions.compose.subscribeAsState
+import org.koin.compose.KoinApplication
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -42,25 +44,31 @@ fun App(root: RootComponent) {
         root.setStatusBarDark(!colorConfig.useLightTheme())
     }
 
-    MaterialTheme(
-        colorScheme = colorScheme
+    KoinApplication(
+        application = {
+            modules(dbModule)
+        }
     ) {
-        val childStack by root.childStack.subscribeAsState()
-        Surface {
-            CompositionLocalProvider(
-                value = LocalRippleConfiguration provides createRippleConfiguration(colorConfig.useLightTheme(), colorScheme)
-            ) {
-                Children(
-                    stack = childStack,
-                    animation = stackAnimation(slide()),
-                ) { child ->
-                    when(val instance = child.instance) {
-                        is RootComponent.Child.LevelSelectScreen -> LevelSelectScreen(instance.component)
-                        is RootComponent.Child.MainGameScreen -> MainGameScreen(instance.component)
-                        is RootComponent.Child.AboutScreen -> AboutScreen(instance.component)
-                        is RootComponent.Child.PaletteScreen -> PaletteScreen(instance.component)
-                        is RootComponent.Child.RankScreen -> RankScreen(instance.component)
-                        is RootComponent.Child.SettingsScreen -> SettingsScreen(instance.component)
+        MaterialTheme(
+            colorScheme = colorScheme
+        ) {
+            val childStack by root.childStack.subscribeAsState()
+            Surface {
+                CompositionLocalProvider(
+                    value = LocalRippleConfiguration provides createRippleConfiguration(colorConfig.useLightTheme(), colorScheme)
+                ) {
+                    Children(
+                        stack = childStack,
+                        animation = stackAnimation(slide()),
+                    ) { child ->
+                        when(val instance = child.instance) {
+                            is RootComponent.Child.LevelSelectScreen -> LevelSelectScreen(instance.component)
+                            is RootComponent.Child.MainGameScreen -> MainGameScreen(instance.component)
+                            is RootComponent.Child.AboutScreen -> AboutScreen(instance.component)
+                            is RootComponent.Child.PaletteScreen -> PaletteScreen(instance.component)
+                            is RootComponent.Child.RankScreen -> RankScreen(instance.component)
+                            is RootComponent.Child.SettingsScreen -> SettingsScreen(instance.component)
+                        }
                     }
                 }
             }

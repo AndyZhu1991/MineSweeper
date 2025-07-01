@@ -64,7 +64,7 @@ import andy.zhu.minesweeper.game.GameConfig
 import andy.zhu.minesweeper.game.GameSave
 import andy.zhu.minesweeper.navigation.LevelSelectScreenComponent
 import andy.zhu.minesweeper.settings.getCustomGame
-import andy.zhu.minesweeper.settings.loadGame
+import andy.zhu.minesweeper.settings.loadGameSave
 import andy.zhu.minesweeper.settings.saveCustomGame
 import minesweeper.composeapp.generated.resources.Res
 import minesweeper.composeapp.generated.resources.*
@@ -135,7 +135,7 @@ fun LevelSelectScreen(component: LevelSelectScreenComponent) {
                 snapshotFlow { pagerState.currentPage }.collect {
                     val currentConfig = gameConfigs[it]
                     if (!savedGames.containsKey(currentConfig.level)) {
-                        savedGames[currentConfig.level] = loadGame(currentConfig.level)
+                        savedGames[currentConfig.level] = loadGameSave(currentConfig.level)
                     }
                     val gameSave = savedGames[currentConfig.level]
                     showResumeButton = if (gameSave?.gameConfig?.level == GameConfig.Level.Custom) {

@@ -1,0 +1,17 @@
+CREATE TABLE SaveGrid (
+    id INTEGER PRIMARY KEY NOT NULL,
+    game_save_id INTEGER NOT NULL,
+    position INTEGER NOT NULL,
+    status TEXT NOT NULL, -- mine, opened, flagged,
+    FOREIGN KEY (game_save_id) REFERENCES GameSave(id)
+);
+
+insert:
+INSERT INTO SaveGrid (game_save_id, position, status)
+VALUES (?, ?, ?);
+
+deleteGameSave:
+DELETE FROM SaveGrid WHERE game_save_id = ?;
+
+forGameSave:
+SELECT * FROM SaveGrid WHERE game_save_id = ?;
