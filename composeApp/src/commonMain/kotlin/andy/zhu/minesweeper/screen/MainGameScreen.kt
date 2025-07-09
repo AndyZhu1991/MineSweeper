@@ -1,3 +1,19 @@
+/**
+ * Main UI implementation for the Minesweeper game.
+ *
+ * This file contains the main UI components for Minesweeper, including:
+ * - Game board rendering and interaction handling
+ * - Top status bar (showing time and remaining mines)
+ * - Game control buttons (back, refresh)
+ * - Game state dialogs (win, fail)
+ *
+ * The UI supports the following interactions:
+ * - Tap: reveal a cell
+ * - Long press: flag a mine
+ * - Pinch/zoom gesture: scale the view
+ * - Mouse right click: flag a mine
+ * - Mouse middle click: quick open surrounding cells
+ */
 @file:OptIn(ExperimentalMaterial3Api::class, ExperimentalResourceApi::class)
 
 package andy.zhu.minesweeper.screen
@@ -73,17 +89,25 @@ import onPointerEvent
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.painterResource
 
+/**
+ * Main screen composable for the Minesweeper game.
+ *
+ * @param component The main game screen component, containing game state and control logic.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainGameScreen(component: MainGameScreenComponent) {
+    // Game instance state
     val gameInstance by component.gameInstance.collectAsState()
     val mapUI by gameInstance.mapUIFlow.collectAsState()
     val textMeasure = rememberTextMeasurer()
+    
+    // Canvas transform state
     var transform by remember { mutableStateOf<CanvasTransform>(CanvasTransform.InitialTransform(IntSize.Zero)) }
     val canvasMatrix = remember { Animatable(Matrix(), MatrixConverter) }
-
     val canvasAnimationFraction = remember { Animatable(1f, Float.VectorConverter) }
 
+    // Handle map UI animation
     LaunchedEffect(mapUI) {
         if (mapUI.hasAnimation) {
             canvasAnimationFraction.snapTo(0f)
@@ -97,9 +121,11 @@ fun MainGameScreen(component: MainGameScreenComponent) {
         }
     }
 
+    // Create draw config and get screen density
     val mineDrawConfig = createDrawConfig()
     val density = LocalDensity.current
 
+    // Calculate canvas paddings, considering status and navigation bars
     val canvasPaddings = with(LocalDensity.current) {
         val defaultPadding = MineDrawConfig.canvasPadding.toPx()
         listOf(
@@ -110,6 +136,10 @@ fun MainGameScreen(component: MainGameScreenComponent) {
         )
     }
 
+    /**
+     * Calculate the canvas transformation matrix.
+     * Returns the corresponding matrix based on the current transform state.
+     */
     fun CanvasTransform.matrix(): Matrix = when(this) {
         is CanvasTransform.InitialTransform -> {
             val contentInner = Rect(
@@ -126,6 +156,7 @@ fun MainGameScreen(component: MainGameScreenComponent) {
         is CanvasTransform.AnimatedTransform -> matrix
     }
 
+    // Listen to canvas transform state and perform corresponding animation
     LaunchedEffect(transform) {
         when(transform) {
             is CanvasTransform.InitialTransform -> {
@@ -140,6 +171,13 @@ fun MainGameScreen(component: MainGameScreenComponent) {
         }
     }
 
+    /**
+     * Calculate the mine grid position corresponding to a pointer offset.
+     *
+     * @param pointerOffset The pointer offset on the canvas
+     * @param mustInsideBorder Whether the pointer must be inside the cell border
+     * @return The mine grid coordinate, or null if not valid
+     */
     fun calcMinePosition(pointerOffset: Offset, mustInsideBorder: Boolean = true): IntOffset? {
         val mineSize = with(density) { mineDrawConfig.mineSize.toPx() }
         val (x, y) = canvasMatrix.value.inverted().map(pointerOffset)
@@ -295,6 +333,12 @@ fun MainGameScreen(component: MainGameScreenComponent) {
     }
 }
 
+/**
+ * Game win dialog.
+ *
+ * @param gameWinInfo Game win info, including ranking data
+ * @param onDismissRequest Callback when dialog is dismissed
+ */
 @Composable
 private fun SuccessDialog(
     gameWinInfo: GameInstance.GameWinInfo,
@@ -325,6 +369,12 @@ private fun SuccessDialog(
     )
 }
 
+/**
+ * Top status bar title composable.
+ * Shows game time and remaining mines.
+ *
+ * @param gameInstance Game instance providing time and mine info
+ */
 @Composable
 private fun Title(gameInstance: GameInstance) {
     val timeString by gameInstance.timeString.collectAsState("0")
@@ -365,6 +415,12 @@ private fun Title(gameInstance: GameInstance) {
     }
 }
 
+/**
+ * Floating action button for the game.
+ * Used to switch tap action (reveal/flag).
+ *
+ * @param gameInstance Game instance controlling button state and behavior
+ */
 @Composable
 private fun MineFab(gameInstance: GameInstance) {
     val flagWhenTap by gameInstance.flagWhenTap.collectAsState()
@@ -384,6 +440,12 @@ private fun MineFab(gameInstance: GameInstance) {
     }
 }
 
+/**
+ * Game fail dialog.
+ *
+ * @param onDismissRequest Callback when dialog is dismissed
+ * @param onRetry Callback to retry the game
+ */
 @Composable
 private fun FailureDialog(
     onDismissRequest: () -> Unit,
@@ -418,6 +480,10 @@ private fun FailureDialog(
     )
 }
 
+/**
+ * Create mine draw config.
+ * Config includes number, mine, flag and other image resources.
+ */
 @Composable
 fun createDrawConfig(): MineDrawConfig {
     return MineDrawConfig.Image(
@@ -440,6 +506,16 @@ fun createDrawConfig(): MineDrawConfig {
     )
 }
 
+/**
+ * Calculate the initial transformation matrix.
+ * Computes appropriate scaling and translation based on mine size and game area.
+ *
+ * @param mineSize Size of a single mine cell
+ * @param width Game area width (number of cells)
+ * @param height Game area height (number of cells)
+ * @param contentInner Rect of the content area
+ * @return Initial transformation matrix
+ */
 private fun calcInitMatrix(mineSize: Size, width: Int, height: Int, contentInner: Rect): Matrix {
     val minesSize = Size(mineSize.width * width, mineSize.height * height)
 
@@ -479,6 +555,10 @@ private fun calcInitMatrix(mineSize: Size, width: Int, height: Int, contentInner
     }
 }
 
+/**
+ * Matrix animation converter.
+ * Used for matrix animation interpolation.
+ */
 object MatrixConverter : TwoWayConverter<Matrix, AnimationVector4D> {
     override val convertFromVector: (AnimationVector4D) -> Matrix = { vector ->
         Matrix().apply {
@@ -497,15 +577,30 @@ object MatrixConverter : TwoWayConverter<Matrix, AnimationVector4D> {
     }
 }
 
+/**
+ * Sealed class for canvas transform state.
+ */
 sealed class CanvasTransform {
+    /** Initial transform state, contains canvas size */
     data class InitialTransform(val canvasSize: IntSize) : CanvasTransform()
+    /** Fixed transform state, contains matrix */
     data class FixedTransform(val matrix: Matrix) : CanvasTransform()
+    /** Animated transform state, contains target matrix */
     data class AnimatedTransform(val matrix: Matrix) : CanvasTransform()
 }
 
+// Scale limit constants
 private const val MIN_SCALE = 0.3f
 private const val MAX_SCALE = 5f
 
+/**
+ * Limit the scale factor.
+ * Ensures scaling stays within allowed range.
+ *
+ * @param currentMatrix Current transformation matrix
+ * @param scale Target scale factor
+ * @return Adjusted scale factor
+ */
 private fun limitScale(currentMatrix: Matrix, scale: Float): Float {
     return if (scale < 1) {
         if (currentMatrix.scaleX() <= MIN_SCALE) {
