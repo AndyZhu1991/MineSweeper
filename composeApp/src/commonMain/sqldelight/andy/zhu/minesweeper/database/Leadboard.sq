@@ -1,0 +1,26 @@
+CREATE TABLE Leaderboard (
+    id INTEGER PRIMARY KEY NOT NULL,
+    level TEXT NOT NULL,
+    time_millis INTEGER NOT NULL,
+    created_at INTEGER NOT NULL
+);
+
+getAll:
+SELECT * FROM Leaderboard
+WHERE level = ?
+ORDER BY time_millis ASC, created_at ASC;
+
+insert:
+INSERT INTO Leaderboard (level, time_millis, created_at)
+VALUES (?, ?, ?);
+
+deleteLast:
+DELETE FROM Leaderboard WHERE id = (
+    SELECT id FROM Leaderboard
+    WHERE level = ?
+    ORDER BY time_millis DESC, created_at DESC
+    LIMIT 1
+);
+
+lastInsertId:
+SELECT MAX(id) FROM Leaderboard;

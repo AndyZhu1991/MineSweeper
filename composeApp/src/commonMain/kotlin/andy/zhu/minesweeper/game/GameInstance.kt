@@ -2,9 +2,9 @@ package andy.zhu.minesweeper.game
 
 import androidx.compose.ui.unit.IntOffset
 import andy.zhu.minesweeper.combine
+import andy.zhu.minesweeper.database.Leaderboard
 import andy.zhu.minesweeper.map
 import andy.zhu.minesweeper.navigation.SettingsScreenComponent
-import andy.zhu.minesweeper.settings.RankItem
 import andy.zhu.minesweeper.settings.getDefaultAction
 import andy.zhu.minesweeper.settings.getRank
 import andy.zhu.minesweeper.settings.getShowActionToggle
@@ -366,17 +366,16 @@ class GameInstance(
             return GameWinInfo(emptyList(), -1)
         }
 
-        val rank: List<RankItem> = getRank(gameConfig)
-        val currentRankItem = RankItem(
-            Clock.System.now().toEpochMilliseconds(),
-            timeMillis.value.toLong(),
-        )
-        val newRank = (listOf(currentRankItem) + rank)
-            .sortedBy { it.costTimeMillis }
-            .take(RECORD_KEEP_COUNT)
-        val currentRank = newRank.indexOf(currentRankItem)
-        saveRank(gameConfig, newRank)
-        return GameWinInfo(newRank, currentRank)
+        val rankSavedId = saveRank(gameConfig, timeMillis.value.toLong(),
+            Clock.System.now().toEpochMilliseconds())
+
+        val allRank: List<Leaderboard> = getRank(gameConfig)
+        val myRankIndex = if (rankSavedId != null) {
+            allRank.indexOfFirst { it.id == rankSavedId }
+        } else {
+            -1
+        }
+        return GameWinInfo(allRank, myRankIndex)
     }
 
     fun save(): GameSave {
@@ -439,7 +438,7 @@ class GameInstance(
     }
 
     class GameWinInfo(
-        val records: List<RankItem>,
+        val records: List<Leaderboard>,
         val yourRank: Int,
     )
 

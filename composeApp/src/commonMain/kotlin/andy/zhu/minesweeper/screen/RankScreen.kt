@@ -67,8 +67,8 @@ fun RankScreen(component: RankScreenComponent) {
                     rank.forEachIndexed { index, rankItem ->
                         RankLine(
                             index + 1,
-                            (rankItem.costTimeMillis / 1000).toInt(),
-                            rankItem.timeStampMillis,
+                            (rankItem.time_millis / 1000).toInt(),
+                            rankItem.created_at,
                             false
                         )
                         Spacer(Modifier.height(4.dp))

@@ -1,6 +1,7 @@
 package andy.zhu.minesweeper.settings
 
 import andy.zhu.minesweeper.Database
+import andy.zhu.minesweeper.database.Leaderboard
 import andy.zhu.minesweeper.game.GameConfig
 import andy.zhu.minesweeper.game.GameSave
 import andy.zhu.minesweeper.navigation.SettingsScreenComponent
@@ -13,14 +14,25 @@ import org.koin.mp.KoinPlatform.getKoin
 // Rank
 /**************************************************************************************************/
 
-private const val PREF_NAME_RANK = "rank"
-
-fun getRank(config: GameConfig): List<RankItem> {
-    return getPlatform().getPreference(PREF_NAME_RANK).getObject(config.name(), emptyList())
+fun getRank(config: GameConfig): List<Leaderboard> {
+    return getKoin().get<Database>().run {
+        leadboardQueries.getAll(config.name()).executeAsList()
+    }
 }
 
-fun saveRank(config: GameConfig, rank: List<RankItem>) {
-    getPlatform().getPreference(PREF_NAME_RANK).putObject(config.name(), rank)
+fun saveRank(config: GameConfig, timeMillis: Long, timestamp: Long): Long? {
+    return getKoin().get<Database>().run {
+        val all = leadboardQueries.getAll(config.name()).executeAsList()
+        if (all.size < 10 || timeMillis < all.last().time_millis) {
+            if (all.size >= 10) {
+                leadboardQueries.deleteLast(config.name())
+            }
+            leadboardQueries.insert(config.name(), timeMillis, timestamp)
+            leadboardQueries.lastInsertId().executeAsOne().MAX
+        } else {
+            null
+        }
+    }
 }
 
 

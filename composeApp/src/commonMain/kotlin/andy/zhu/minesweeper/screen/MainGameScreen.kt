@@ -361,8 +361,8 @@ private fun SuccessDialog(
                 modifier = Modifier.width(280.dp),
             ) {
                 gameWinInfo.records.forEachIndexed { index, recordItem ->
-                    RankLine(index + 1, (recordItem.costTimeMillis / 1000).toInt(),
-                        recordItem.timeStampMillis ,gameWinInfo.yourRank == index)
+                    RankLine(index + 1, (recordItem.time_millis / 1000).toInt(),
+                        recordItem.created_at ,gameWinInfo.yourRank == index)
                 }
             }
         }
